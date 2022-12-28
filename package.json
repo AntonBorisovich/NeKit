@@ -1,0 +1,11 @@
+{
+  "name": "nekit",
+  "version": "1.0.0",
+  "description": "Modular base for bots",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
