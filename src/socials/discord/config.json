@@ -1,19 +1,20 @@
 {
 	"name": "discord",
-	"desc": "Quick commands for Discord.js v14"
+	"author": "AntonBorisovich",
+	"desc": "Functions for Discord.js v14",
 	"version": "1",
 	"functions": {
 		"main": {
 			"name": "main",
-			"desc": "main file that logs in discord and handles events"
+			"desc": "main file that handles events"
 		},
 		"send": {
 			"name": "send",
 			"desc": "send or reply"
 		},
-		"report": {
-			"name": "report",
-			"desc": "send message to developer"
+		"dm": {
+			"name": "dm",
+			"desc": "dm user by id (for error reports)"
 		},
 		"image": {
 			"name": "image",
@@ -23,6 +24,5 @@
 			"name": "fetchLastN",
 			"desc": "fetch last N messages in channel"
 		}
-	},
-	
+	}
 }

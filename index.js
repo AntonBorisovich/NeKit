@@ -1,78 +1,123 @@
-function getTimestamp() {
-	var date = new Date();
-	var hours = date.getHours()
-	if (hours < 10) {
-		hours = "0" + hours
-	}
-	var mins = date.getMinutes()
-	if (mins < 10) {
-		mins = "0" + mins
-	}
-	var seconds = date.getSeconds()
-	if (seconds < 10) {
-		seconds = "0" + seconds
-	}
-	var result = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + hours + ":" + mins + ":" + seconds
-	return result
-}
+let nek = {} // главная переменная всего бота
 
-console.log(getTimestamp() + " [INFO] New Kitsune (NeKit) started booting!")
+nek.log = function(state, msg) { // удобный лог
+	let date = new Date();
+	let hours = date.getHours();
+	if (hours < 10) {hours = "0" + hours};
+	let mins = date.getMinutes();
+	if (mins < 10) {mins = "0" + mins};
+	let seconds = date.getSeconds();
+	if (seconds < 10) {seconds = "0" + seconds};
+	console.log(date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + hours + ":" + mins + ":" + seconds + ' [' + state + '] ' + msg);
+};
+
+nek.log('BOOTLOADER','--=== Bootloader started! ===--');
+
 const launch_time = Date.now(); // запоминаем время запуска
-const os = require('os'); // подключение библиотеки получение данных о системе (os)
-const fs = require("fs"); // подключение библиотеки файловой системы (fs)
-console.log(getTimestamp() + ' [INFO] Running node ' + process.version + ' on ' + os.platform() + ' with ' + Math.floor((os.totalmem() / 1048576)) + 'MB of RAM')
+let config 						// временная переменная для загрузки конфигов
+const os = require('os'); 		// подключение библиотеки получение данных о системе (os)
+const fs = require("fs"); 		// подключение библиотеки файловой системы (fs)
 
-
-
-// Начало инициализации
-console.log(getTimestamp() + ' [INFO] Reading config...');
-let config
-let nek = {}
+// Загрузка информации о загрузчике
+nek.log('BOOTLOADER', 'Reading meta...');
 try {
-	config = require('./config.json');
+	const sysconf = require('./bootmeta.json');
+	nek.codename = sysconf.codename
+	nek.fullname = sysconf.fullname
+	nek.apiver = sysconf.apiver
+	nek.version = sysconf.version
+	nek.log('BOOTLOADER', 'Bootloader meta: ' + nek.fullname + ' (' + nek.codename + ') / Version: ' + nek.version + ' / Commands version: ' + nek.apiver)
 } catch(e) {
-	console.log(getTimestamp() + ' [ERROR] Failed to load config! ' + e.code);
-	console.log(getTimestamp() + ' [INFO] You can generate config by opening configure.bat ');
+	nek.log('ERROR', 'Failed to load the metadata! (' + e.code + ')');
 	process.exit(1);
 }
 
-// Обрабатываем режим дебага
-nek.debug = config.debug
-if (nek.debug) { console.log(getTimestamp() + " [INFO] Debug mode activated") };
+// Загрузка основного конфига
+nek.log('BOOTLOADER', 'Reading config...');
+try {
+	config = require('./config.json'); // читаем файл конфига
+	
+} catch(e) {
+	nek.log('ERROR', 'Failed to load config! ' + e.code);
+	nek.log('BOOTLOADER', 'You can generate config by opening configure.bat (nah, maybe later i\'ll do it)');
+	process.exit(1);
+}
 
-// Обрабатываем режим работы
-if (!config.mode) { console.log(getTimestamp() + " [ERROR] You need to provide social in config"); process.exit(1); }
-
-//debug.log()
-
-
-console.log(getTimestamp() + ' [INFO] Reading social mode...');
-let mode
-fs.readdir("./src/socials/", (err, files)=>{
-	if (err) throw err;
-	let social = false;
-	for ( const file of files ) { // перебрать все файлы
-		try {
-			if (file == config.mode) { social = file };
-		} catch(err) { // при ошибке лог
-			console.error(err);
-		};
+// Чтение аргументов запуска
+const args = process.argv.slice(2);
+if (args[0]) {
+	if (args[0].startsWith('--mode=')) {
+		nek.log('BOOTLOADER', 'Forcing mode to ' + args[0].slice(7))
+		config.mode = args[0].slice(7);
 	};
-	if (!social) {
-		console.log(getTimestamp() + " [ERROR] Social " + config.mode + " not found");
+};
+
+// Проверяем установлен ли режим работы
+if (!config.mode) { nek.log("ERROR", "No mode provided!"); process.exit(1); };
+
+// Начинаем поиск соц. сети
+nek.log('BOOTLOADER', 'Looking for ' + config.mode + '...');
+fs.readdir("./src/socials/", (err, files)=>{ // читаем папку
+	if (err) throw err;
+	let socConf; // создаем временную переменную с конфигом
+	try {
+		socConf = require('./src/socials/' + config.mode + '/config.json'); // записываем конфиг в переменную
+	} catch(e) {
+		nek.log("ERROR", "Failed to load " + config.mode + "'s config file! Make sure that it exists!");
+	};
+	
+	nek.log("BOOTLOADER", "Loaded config for " + socConf.name + " (v" + socConf.version + " made by " + socConf.author + ")"); // сообщить, если конфиг соц. сети успешно загрузился
+	if (socConf.functions.main) { // если в конфиге есть основная функция то работать
+		nek.log("BOOTLOADER", "Loading main...");
+		const socMainPrototype = require('./src/socials/' + config.mode + '/' + socConf.functions.main.name + '.js');
+		const socMain = new socMainPrototype(nek, config);
+		nek.log("BOOTLOADER", "Executing autorun...");
+		const startupStatus = socMain.startup(nek, config); // запускаем авторан
+		if (startupStatus == 'done') { // если запуск успешен
+			nek.log("BOOTLOADER", "Loading functions...");
+			fs.readdir("./src/socials/"+config.mode, (err, files) => { // смотрим папку
+				if (err) throw err;
+				for ( const file of files ) { // перебираем файлы в папке
+					try {
+						if (file.endsWith(".js") && file != "commands" && file != "main.js" && file != "config.json") { // если .js и не main и не config то работать
+							let fileName = file.substring(0,file.length-3); // сокращаем .js
+							let fncPrototype = require("./src/socials/" + config.mode + "/" + fileName); // читаем файл
+							let func = new fncPrototype(nek, config); // вытаскиваем из файла функцию
+							eval('nek.' + fileName + ' =  func'); // пишем функцию в переменную (nek.имя_файла)
+						};
+					} catch(err) {
+						nek.log("ERROR", "Failed to load " + file + "! Look below for more info:");
+						console.error(err);
+						process.exit(1);
+					};
+				};
+			});
+			nek.log("BOOTLOADER", "Loading commands...");
+			fs.readdir("./src/commands/", (err, files) => {
+				if (err) throw err;
+				nek.commands = []
+				for ( const file of files ) { 
+					try {
+						if (file.endsWith(".js")) { // если .js то работать
+							let fileName = file.substring(0,file.length-3);
+							let cmdPrototype = require("./src/commands/"+fileName); // читаем файл
+							let command = new cmdPrototype(nek, config); // вытаскиваем из файла функцию
+							nek.commands.push(command); // запись функции в глобальный список
+						};
+					} catch(err) {
+						console.error(err);
+					};
+				};
+				nek.log("BOOTLOADER", "Executing " + socConf.name + "'s main function...");
+				socMain.work(nek, config);
+			});
+		} else {
+			nek.log("ERROR", "Autorun returned error: " + startupStatus);
+			process.exit(1);
+		};
+	} else {
+		nek.log("ERROR", "Main function not found!");
 		process.exit(1);
 	};
-	const socconf = require('./src/socials/' + config.mode + '/config.json');
-	
-	
-})
-
-return;
-
-
-
-
-// склад модулей
-let commands = [];  // команды
-
-let errors = [];    // список ошибок, произошедших во время инициализации
+});
+//nek.log("ERROR", "Main function not found!");
