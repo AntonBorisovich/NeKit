@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.7.1"
+    "canvas": "^2.11.0",
+    "discord.js": "^14.7.1",
+    "telegraf": "^4.11.2"
   }
 }
