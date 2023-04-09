@@ -1,5 +1,5 @@
 # NeKit
-Modular base for bots (telegram and discord)
+New Kitsune. Тупо бот для дискорда
 
 ## Всякие TODO листы
 TODO github:
