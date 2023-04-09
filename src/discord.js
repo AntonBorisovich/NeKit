@@ -13,7 +13,7 @@ class discord {
 		} catch(e) {
 			
 			nek.log("DISCORD", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
-			console.error(e);
+			console.error(e); // вывод полной ошибки
 			process.exit(1); // закрываем бота
 		}
 		async function messageHandler(msg){
@@ -35,12 +35,12 @@ class discord {
 		})
 		
 		client.on(Discord.Events.MessageCreate, async (msg) => { // если новое сообщение в чате
-			messageHandler(msg);
+			messageHandler(msg); // обработать
 		})
 
 		client.on(Discord.Events.MessageUpdate, async (oldmsg, newmsg) => { // если сообщение обновлено (edit)
-			if (oldmsg.content.trim() !== newmsg.content.trim()) {
-				messageHandler(newmsg);
+			if (oldmsg.content.trim() !== newmsg.content.trim()) { // если сообщение не совпадает по содержанию со старым, то
+				messageHandler(newmsg); // обработать
 			}
 		})
 		
@@ -54,7 +54,7 @@ class discord {
 			client.login(config["token_" + this.name]); // логинимся в дискорд
 		} catch(e) {
 			nek.log("DISCORD", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
-			console.error(e);
+			console.error(e); // вывод полной ошибки
 			process.exit(1); // закрываем бота
 		}
 
