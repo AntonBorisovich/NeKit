@@ -249,10 +249,10 @@ function loadFunctions() {
 				nekFuncs.set(func.name, func); // пишем фунцкию в мапу
 			}
 		} catch(e) {
-			funcErrs.push({'file': file, 'error': e});
+			funcErrs.push({file: file, error: e});
 		}
 	}
-	return {'map': nekFuncs, 'errors': funcErrs};
+	return {map: nekFuncs, errors: funcErrs};
 }
 // Читаем команды
 function loadCommands() {
@@ -269,14 +269,15 @@ function loadCommands() {
 				nekComms.set(command.name, command); // пишем команду в мапу
 			}
 		} catch(e) {
-			commErrs.push({'file': file, 'error': e});
+			commErrs.push({file: file, error: e});
 		}
 	}
-	return {'map': nekComms, 'errors': commErrs};
+	return {map: nekComms, errors: commErrs};
 }
 
 
 let totalErrors = []; // массив кратких ошибок. Нужен, что бы в дальнейшем выпукнуть краткий лог в лс разработчику
+
 // ФУНКЦИИ
 const nekFuncs = loadFunctions(); // читаем функции
 if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, то всё ок
