@@ -1,16 +1,26 @@
 {
   "name": "nekit",
   "version": "1.0.0",
-  "description": "Modular base for bots",
+  "description": "new kitsune. just a bot for discord",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AntonBorisovich/NeKit.git"
+  },
+  "keywords": [
+    "bot"
+  ],
+  "author": "AntonBorisovich",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AntonBorisovich/NeKit/issues"
+  },
+  "homepage": "https://github.com/AntonBorisovich/NeKit#readme",
   "dependencies": {
-    "canvas": "^2.11.0",
-    "discord.js": "^14.7.1",
-    "telegraf": "^4.11.2"
+    "canvas": "^2.11.2",
+    "discord.js": "^14.9.0"
   }
 }
