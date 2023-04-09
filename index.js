@@ -239,20 +239,16 @@ async function loadFunctions() {
 	nek.log('BOOTLOADER', 'Loading functions...', false, true);
 	let nekFuncs = new Map(); // создаём мапу функций
 	let funcErrs = []; // создаём массив ошибок
-	const dir = await fs.readdir('./src/functions/'); // смотрим папку с командами
-	for ( const file of dir ) { 
+	const dir = await fs.readdir('./src/functions/'); // смотрим папку с функциями
+	for ( const file of dir ) { // перебираем все файлы
 		try {
 			if (file.endsWith(".js")) { // если .js то работать
 				let fileName = file.substring(0,file.length-3);
 				let fncPrototype = require("./src/functions/"+fileName); // читаем файл
 				let func = new fncPrototype(nek, config); // вытаскиваем из файла функцию
-				nekFuncs.set(func.name, func); // пишем команду в мапу
-				//nek.simplelog('Loaded some!', 'cyan');
+				nekFuncs.set(func.name, func); // пишем фунцкию в мапу
 			}
 		} catch(e) {
-			//nek.simplelog('ERR!','red');
-			//nek.log("ERROR", "Failed to read " + file + "!", "red");
-			//console.error(e);
 			funcErrs.push({'file': file, 'error': e});
 		}
 	}
@@ -271,19 +267,32 @@ async function loadCommands() {
 				let cmdPrototype = require("./src/commands/"+fileName); // читаем файл
 				let command = new cmdPrototype(nek, config); // вытаскиваем из файла функцию
 				nekComms.set(command.name, command); // пишем команду в мапу
-				//nek.simplelog('Loaded some!', 'magenta');
 			}
 		} catch(e) {
-			//nek.simplelog('ERR!','red');
-			//nek.log("ERROR", "Failed to read " + file + "!", "red");
-			//console.error(e);
 			commErrs.push({'file': file, 'error': e});
 		}
 	}
-	return {'map': nekComms, 'errors': commErrs}
+	return {'map': nekComms, 'errors': commErrs};
 }
 (async () => { // этот асинк нужен, что бы подождать нормально
 	let totalErrors = []; // массив кратких ошибок. Нужен, что бы в дальнейшем выпукнуть краткий лог в лс разработчику
+	
+	// ФУНКЦИИ
+	const nekFuncs = await loadFunctions(); // читаем функции
+	if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, то всё ок
+		nek.simplelog('OK!', 'green');
+	} else { // если есть хоть одна ошибка, то проверить все
+		nek.simplelog('ERR!', 'red'); // пишем статус ошибки
+		nek.log('ERROR', 'Caught error(s) while loading function(s)!', 'red'); // пишем, что произошли ошибки
+		for await (const err of nekFuncs.errors) { // начинаем перечислять все ошибки в косноль
+			nek.simplelog('> ' + err.file + ' <  Error log below:', 'red');
+			console.error(err.error); // пишем полную ошибку в консоль
+			totalErrors.push(err.error.name + ": " + err.error.message + "\n>" + err.error.stack.slice(0, err.error.stack.indexOf('\n'))); // добавляем краткую ошибку в массив
+			// краткая ошибка выглядит так:
+			// name: message
+			// >файл_где_произошла_ошибка:строка
+		}
+	}
 	
 	// КОМАНДЫ
 	const nekComms = await loadCommands(); // читаем команды
@@ -291,29 +300,33 @@ async function loadCommands() {
 		nek.simplelog('OK!', 'green');
 	} else { // если есть хоть одна ошибка, то проверить все
 		nek.simplelog('ERR!', 'red'); // пишем статус ошибки
-		nek.log('ERROR', 'Caught error(s) while loading commands!', 'red') // пишем, что произошли ошибки
+		nek.log('ERROR', 'Caught error(s) while loading command(s)!', 'red'); // пишем, что произошли ошибки
 		for await (const err of nekComms.errors) { // начинаем перечислять все ошибки в косноль
-			nek.simplelog('> ' + err.file + ' <  Error log below:', 'red')
+			nek.simplelog('> ' + err.file + ' <  Error log below:', 'red');
 			console.error(err.error); // пишем полную ошибку в консоль
-			totalErrors.push(err.error.name); // добавляем краткую ошибку в массив
+			totalErrors.push(err.error.name + ": " + err.error.message + "\n>" + err.error.stack.slice(0, err.error.stack.indexOf('\n'))); // добавляем краткую ошибку в массив
+			// краткая ошибка выглядит так:
+			// name: message
+			// >файл_где_произошла_ошибка:строка
 		}
 	}
 	
 	// СОЦ. СЕТЬ
 	try {
-		const social = require("./src/" + config.socfile + '.js'); // читаем файл (socfile - social file)
-		
+		const sock = require("./src/" + config.socfile + '.js'); // читаем файл (socfile - social file)
+		const social = new sock(nek, config); // прототипим файл ???
+		nek.log('BOOTLOADER', 'Loaded ' + social.name + ' [' + social.version + ']');
 		if (totalErrors[0]) { // если есть ошибки, то 
 			if (config.noDmErrors) { // если нельзя логировать ошибки
-				nek.log('BOOTLOADER', 'Can\'t log errors in dm. Shutting down...')
+				nek.log('BOOTLOADER', 'Can\'t log errors in dm. Shutting down...');
 				process.exit(1);
 			} else {
-				nek.log('BOOTLOADER', 'Trying to log errors in dm...')
-				social.logErrors(config, totalErrors)
+				nek.log('BOOTLOADER', 'Trying to log errors in dm...');
+				social.logErrors(nek, config, totalErrors);
 				return;
 			}
 		}
-		social.start(nek, config, nekFuncs, nekComms);
+		social.start(nek, config, nekFuncs.map, nekComms.map);
 	} catch(e) {
 		nek.log('ERROR', 'Failed to load socfile!', 'red');
 		console.error(e);
