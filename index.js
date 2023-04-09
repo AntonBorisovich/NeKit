@@ -134,14 +134,14 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 	}
 }
 
-nek.log('BOOTLOADER', '--=== Bootloader started! ===--'); // информируем, что загрузчик успешно задал основные функции
+
+// === НАЧАЛО РАБОТЫ === //
+nek.log('BOOTLOADER', 'Bootloader started!'); // информируем, что загрузчик успешно задал основные функции
 
 nek.launch_time = Date.now(); 	// запоминаем время запуска
 let config; 					// временная переменная для загрузки конфигов
 const os = require('os'); 		// подключение библиотеки получение данных о системе (os)
 const fs = require("fs"); 		// подключение библиотеки файловой системы (fs)
-
-
 
 // Загрузка информации о загрузчике (метаданные)
 nek.log('BOOTLOADER', 'Reading meta...', false, true); // информируем, что начинаем читать файлы метаданных
@@ -151,7 +151,7 @@ try {
 	nek.fullname = sysconf.fullname; // пишеи читаемое имя программы
 	nek.version = sysconf.version; // пишем версию загрузчика
 	nek.simplelog('OK!', 'green'); // информируем, что метаданные успешно считаны
-	nek.log('BOOTLOADER', 'Bootloader meta: ' + nek.fullname + ' (' + nek.codename + ') / Version: ' + nek.version + ' / Commands version: ' + nek.apiver); // для проверки выводим методанные
+	//nek.log('BOOTLOADER', 'Bootloader meta: ' + nek.fullname + ' (' + nek.codename + ') / Version: ' + nek.version + ' / Commands version: ' + nek.apiver); // для проверки выводим методанные
 } catch(e) { // если словили ошибку
 	nek.simplelog('ERR!', 'red'); // всё хреново
 	console.error(e); // выводим ошибку
@@ -169,7 +169,8 @@ try {
 	process.exit(1); // выходим
 }
 
-//Чтение аргументов запуска
+
+// === АРГУМЕНТЫ === //
 const args = process.argv.slice(2);
 if (args[0]) { // если есть хоть какой-нибудь аргумент, то начать их проверять
 	for (const arg of args) { 
@@ -234,7 +235,10 @@ if (config.name) { // если есть имя
 	nek.name = "NeKit"; // меняем имя
 }
 
-// Читаем функции
+
+// === ЧТЕНИЕ ФУНКЦИЙ И КОМАНД: ЗАДАЁМ ФУНКЦИИ === //
+
+// Чтение функций
 function loadFunctions() {
 	nek.log('BOOTLOADER', 'Loading functions...', false, true);
 	let nekFuncs = new Map(); // создаём мапу функций
@@ -254,7 +258,7 @@ function loadFunctions() {
 	}
 	return {map: nekFuncs, errors: funcErrs};
 }
-// Читаем команды
+// Чтение команд
 function loadCommands() {
 	nek.log('BOOTLOADER', 'Loading commands...', false, true);
 	let nekComms = new Map(); // создаём мапу команд
@@ -276,9 +280,11 @@ function loadCommands() {
 }
 
 
+// === ЧТЕНИЕ ФУНКЦИЙ И КОМАНД: РАБОТАЕМ === //
+
 let totalErrors = []; // массив кратких ошибок. Нужен, что бы в дальнейшем выпукнуть краткий лог в лс разработчику
 
-// ФУНКЦИИ
+// Функции
 const nekFuncs = loadFunctions(); // читаем функции
 if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, то всё ок
 	nek.simplelog('OK!', 'green');
@@ -295,7 +301,7 @@ if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, т
 	}
 }
 
-// КОМАНДЫ
+// Команды
 const nekComms = loadCommands(); // читаем команды
 if (!nekComms.errors[0]) { // если нет ни единой ошибки, то всё ок
 	nek.simplelog('OK!', 'green');
@@ -312,7 +318,7 @@ if (!nekComms.errors[0]) { // если нет ни единой ошибки, т
 	}
 }
 
-// СОЦ. СЕТЬ
+// Вход в сеть
 try {
 	const sock = require("./src/" + config.socfile + '.js'); // читаем файл (socfile - social file)
 	const social = new sock(nek, config); // прототипим файл ???

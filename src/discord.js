@@ -11,6 +11,7 @@ class discord {
 	
 		// ВХОД
 		try {
+			nek.log("DISCORD", "Logging in...", "cyan");
 			client.login(config["token_" + this.name]); // логинимся в дискорд
 		} catch(e) {
 			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
@@ -19,12 +20,13 @@ class discord {
 		}
 		client.once(Discord.Events.ClientReady, async () => { // когда залогинились
 			nek.log("DISCORD", "Logged in as " + client.user.tag, 'cyan'); // логируем что залогинились
+			nek.log("READY", `Total launch time: ${((Date.now() - nek.launch_time) / 1000 )}s`);
 			client.user.setStatus('online'); // статус невидимки
 			client.user.setActivity(config.prefix + 'help'); // играет в <prefix>help
 			let embed = new Discord.EmbedBuilder() // составляем embed
-				.setTitle('Logged in!')
+				.setTitle('Logged in')
 				.setColor(config.basecolor)
-				.setDescription(nek.fullname + " (ver: " + nek.version + ") is ready to work!")
+				.setDescription(nek.fullname + " is ready to work!\n\nBootloader ver: `" + nek.version + "`\nDiscord ver: `" + this.version + "`")
 				.setTimestamp()
 			const botowner = await client.users.fetch(config.developers[0]); // ищем разработчика по id
 			await botowner.send({ embeds: [embed] }); // отправляем разрабу
@@ -71,14 +73,18 @@ class discord {
 	
 	
 	async logErrors(nek, config, totalErrors){ // лог ошибки (totalErrors) в лс первому разработчику, указанному в config.json
+	
+		// ВХОД
 		try {
+			nek.log("DISCORD", "Logging in...", "cyan");
 			client.login(config["token_" + this.name]); // логинимся в дискорд
 		} catch(e) {
 			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
 			console.error(e); // вывод полной ошибки
 			process.exit(1); // закрываем бота
 		}
-
+		
+		// КОГДА ВОШЛИ
 		client.once(Discord.Events.ClientReady, async () => { // когда залогинились
 			try {
 				client.user.setStatus('invisible'); // статус невидимки
