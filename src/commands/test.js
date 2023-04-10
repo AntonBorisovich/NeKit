@@ -5,6 +5,9 @@ class Test {
 		//this.nek = nek;
         //this.config = config;
 		
+		this.category = "test"; // категория команд
+		this.hidden = false; // можно ли отображать команду в общем списке
+		
 		this.perms = ["image", "embed"];
         this.name = "test"; // имя команды
 		this.desc = "тест desc"; // описание команды в общем списке команд
@@ -14,11 +17,11 @@ class Test {
 		this.advargs = "тест advargs"; // аргументы в помоще по конкретной команде
     }
 
-    run(nek, msg, args){
+    run(nek, client, msg, args){
 		if (!args) {
-			nek.send({embed: ""}, msg)
+			msg.reply({embed: ""}, msg)
 		} else {
-			nek.send("тест simple text output", msg)
+			msg.reply("тест simple text output", msg)
 		}
 	}
 	

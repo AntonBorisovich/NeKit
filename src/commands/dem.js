@@ -33,6 +33,9 @@ const demotivatorImage = async (img, title, subtitle, width, height) => {
 
 class Dem {
     constructor(nek, config){
+		this.category = "image"; // категория команд
+		this.hidden = false; // можно ли отображать команду в общем списке
+		
 		this.perms = ["image"];
         this.name = "dem"; // имя команды
 		this.desc = "сделать демотиватор"; // описание команды в общем списке команд
@@ -42,7 +45,7 @@ class Dem {
 		this.advargs = "&lt-w&gt &ltверхний текст&gt;&ltнижний текст&gt"; // аргументы в помоще по конкретной команде
     }
 
-    async run(nek, msg, args){
+    async run(nek, client, msg, args){
 		const pic = await nek.getImage(nek, msg, 'url')
 		console.log(pic)
 		

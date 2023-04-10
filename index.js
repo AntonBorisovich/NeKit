@@ -139,7 +139,7 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 nek.log('BOOTLOADER', 'Bootloader started!'); // информируем, что загрузчик успешно задал основные функции
 
 nek.launch_time = Date.now(); 	// запоминаем время запуска
-let config; 					// временная переменная для загрузки конфигов
+//let config; 					// временная переменная для загрузки конфигов
 const os = require('os'); 		// подключение библиотеки получение данных о системе (os)
 const fs = require("fs"); 		// подключение библиотеки файловой системы (fs)
 
@@ -161,7 +161,7 @@ try {
 // Загрузка пользовательских настроек (конфига)
 nek.log('BOOTLOADER', 'Reading config...', false, true); // информируем, что начинаем читать конфиг
 try {
-	config = require('./src/config/config.json'); // читаем файл конфига
+	nek.config = require('./src/config/config.json'); // читаем файл конфига
 	nek.simplelog('OK!', 'green'); // информируем, что конфиг успешно считаны
 } catch(e) {
 	nek.simplelog('ERR!', 'red'); // всё хреново
@@ -177,28 +177,28 @@ if (args[0]) { // если есть хоть какой-нибудь аргум�
 	
 		// TODO: Переделать так, что бы можно было считать любой аргумент, который имеет '=' и записать в конфиг, а не только заданные тут.
 		if (arg.startsWith('--soc=')) { // соц. сеть
-			config.socfile = arg.slice(6); // записать новый socfile
-			nek.log('ARGUMENT', 'Forcing socfile to: ' + config.socfile, 'cyan'); // выводим, что режим работы форсирован
+			nek.config.socfile = arg.slice(6); // записать новый socfile
+			nek.log('ARGUMENT', 'Forcing socfile to: ' + nek.config.socfile, 'cyan'); // выводим, что режим работы форсирован
 			break;
 		}
 		if (arg.startsWith('--color=')) { // цвет
-			config.basecolor = arg.slice(8); // записать новый basecolor
-			nek.log('ARGUMENT', 'Forcing basecolor to: ' + config.basecolor, 'cyan'); // выводим, что цвет форсирован
+			nek.config.basecolor = arg.slice(8); // записать новый basecolor
+			nek.log('ARGUMENT', 'Forcing basecolor to: ' + nek.config.basecolor, 'cyan'); // выводим, что цвет форсирован
 			break;
 		}
 		if (arg.startsWith('--prefix=')) { // префикс
-			config.prefix = arg.slice(9); // записать новый prefix
-			nek.log('ARGUMENT', 'Forcing prefix to: ' + config.prefix, 'cyan'); // выводим, что префикс форсирован
+			nek.config.prefix = arg.slice(9); // записать новый prefix
+			nek.log('ARGUMENT', 'Forcing prefix to: ' + nek.config.prefix, 'cyan'); // выводим, что префикс форсирован
 			break;
 		}
 		if (arg.startsWith('--name=')) { // имя
-			config.prefix = arg.slice(7); // записать новый name
-			nek.log('ARGUMENT', 'Forcing name to: ' + config.name, 'cyan'); // выводим, что имя форсировано
+			nek.config.prefix = arg.slice(7); // записать новый name
+			nek.log('ARGUMENT', 'Forcing name to: ' + nek.config.name, 'cyan'); // выводим, что имя форсировано
 			break;
 		}
 		
 		if (arg.startsWith('--noDmErrors')) { // не пытаться отправлять ошибки в лс
-			config.noDmErrors = true;
+			nek.config.noDmErrors = true;
 			nek.log('ARGUMENT', 'Forcing not to send errors in dm', 'cyan');
 			break;
 		}
@@ -206,30 +206,30 @@ if (args[0]) { // если есть хоть какой-нибудь аргум�
 }
 
 // Проверяем установлен ли режим работы
-if (!config.socfile) { // если ничего не задано
+if (!nek.config.socfile) { // если ничего не задано
 	nek.log("ERROR", "No socfile provided! Falling to discord", "yellow"); // информируем о смене socfile-а
-	config.socfile = 'discord';
+	nek.config.socfile = 'discord';
 }
 
 // Проверяем есть ли префикс
-if (config.prefix) { // если есть префикс
-	nek.prefix = config.prefix;
+if (nek.config.prefix) { // если есть префикс
+	nek.prefix = nek.config.prefix;
 } else {
 	nek.log("ERROR", "No prefix provided!", "red"); // информируем об ошибке
 	process.exit(1); // выходим
 }
  
 // Проверяем есть ли цвет бота
-if (config.basecolor) { // если есть цвет
-	nek.basecolor = config.basecolor;
+if (nek.config.basecolor) { // если есть цвет
+	nek.basecolor = nek.config.basecolor;
 } else {
 	nek.log("ERROR", "No basecolor provided! Falling to \"#FFFFFF\"", "yellow"); // информируем о смене цвета
 	nek.basecolor = "#FFFFFF"; // меняем цвет
 }
 
 // Проверяем есть ли имя
-if (config.name) { // если есть имя
-	nek.name = config.name;
+if (nek.config.name) { // если есть имя
+	nek.name = nek.config.name;
 } else {
 	nek.log("WARNING", "No custom name provided! Falling to \"NeKit\"", "yellow"); // информируем о смене имени
 	nek.name = "NeKit"; // меняем имя
@@ -249,7 +249,7 @@ function loadFunctions() {
 			if (file.endsWith(".js")) { // если .js то работать
 				let fileName = file.substring(0,file.length-3);
 				let fncPrototype = require("./src/functions/"+fileName); // читаем файл
-				let func = new fncPrototype(nek, config); // вытаскиваем из файла функцию
+				let func = new fncPrototype(nek); // вытаскиваем из файла функцию
 				nekFuncs.set(func.name, func); // пишем фунцкию в мапу
 			}
 		} catch(e) {
@@ -269,7 +269,7 @@ function loadCommands() {
 			if (file.endsWith(".js")) { // если .js то работать
 				let fileName = file.substring(0,file.length-3);
 				let cmdPrototype = require("./src/commands/"+fileName); // читаем файл
-				let command = new cmdPrototype(nek, config); // вытаскиваем из файла функцию
+				let command = new cmdPrototype(nek); // вытаскиваем из файла функцию
 				nekComms.set(command.name, command); // пишем команду в мапу
 			}
 		} catch(e) {
@@ -285,7 +285,7 @@ function loadCommands() {
 let totalErrors = []; // массив кратких ошибок. Нужен, что бы в дальнейшем выпукнуть краткий лог в лс разработчику
 
 // Функции
-const nekFuncs = loadFunctions(); // читаем функции
+let nekFuncs = loadFunctions(); // читаем функции
 if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, то всё ок
 	nek.simplelog('OK!', 'green');
 } else { // если есть хоть одна ошибка, то проверить все
@@ -300,9 +300,11 @@ if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, т
 		// >файл_где_произошла_ошибка:строка
 	}
 }
+nek.functions = nekFuncs.map;
+nekFuncs = null; // чистим память
 
 // Команды
-const nekComms = loadCommands(); // читаем команды
+let nekComms = loadCommands(); // читаем команды
 if (!nekComms.errors[0]) { // если нет ни единой ошибки, то всё ок
 	nek.simplelog('OK!', 'green');
 } else { // если есть хоть одна ошибка, то проверить все
@@ -317,23 +319,27 @@ if (!nekComms.errors[0]) { // если нет ни единой ошибки, т
 		// >файл_где_произошла_ошибка:строка
 	}
 }
+nek.commands = nekComms.map;
+nekComms = null; // чистим память
 
 // Вход в сеть
 try {
-	const sock = require("./src/" + config.socfile + '.js'); // читаем файл (socfile - social file)
-	const social = new sock(nek, config); // прототипим файл ???
+	const sock = require("./src/" + nek.config.socfile + '.js'); // читаем файл (socfile - social file)
+	const social = new sock(nek); // прототипим файл ???
 	nek.log('BOOTLOADER', 'Loaded ' + social.name + ' [' + social.version + ']');
 	if (totalErrors[0]) { // если есть ошибки, то 
-		if (config.noDmErrors) { // если нельзя логировать ошибки
+		if (nek.config.noDmErrors) { // если нельзя логировать ошибки
 			nek.log('BOOTLOADER', 'Can\'t log errors in dm. Shutting down...');
 			process.exit(1);
 		} else {
 			nek.log('BOOTLOADER', 'Trying to log errors in dm...');
-			social.logErrors(nek, config, totalErrors);
+			social.logErrors(nek, totalErrors);
 			return;
 		}
 	}
-	social.start(nek, config, nekFuncs.map, nekComms.map);
+	//console.log(nek);
+	//return;
+	social.start(nek);
 } catch(e) {
 	nek.log('ERROR', 'Failed to load socfile!', 'red');
 	console.error(e);

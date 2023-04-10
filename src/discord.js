@@ -1,18 +1,25 @@
 const Discord = require("discord.js");
-const client = new Discord.Client({ intents: [Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.DirectMessages, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.MessageContent], partials: [Discord.Partials.Channel]});
+const client = new Discord.Client({
+	intents: [
+		Discord.GatewayIntentBits.Guilds,
+		Discord.GatewayIntentBits.DirectMessages,
+		Discord.GatewayIntentBits.GuildMessages,
+		Discord.GatewayIntentBits.MessageContent
+	],
+	partials: [Discord.Partials.Channel]
+});
 
 class discord {
-    constructor(nek, config){
+    constructor(nek){
 		this.name = "discord";
 		this.version = "dev";
     }
-	
-    async start(nek, config, funcs, comms){ // нормальная работа
-	
+
+    async start(nek){ // нормальная работа
 		// ВХОД
 		try {
 			nek.log("DISCORD", "Logging in...", "cyan");
-			client.login(config["token_" + this.name]); // логинимся в дискорд
+			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
 		} catch(e) {
 			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
 			console.error(e); // вывод полной ошибки
@@ -22,21 +29,44 @@ class discord {
 			nek.log("DISCORD", "Logged in as " + client.user.tag, 'cyan'); // логируем что залогинились
 			nek.log("READY", `Total launch time: ${((Date.now() - nek.launch_time) / 1000 )}s`);
 			client.user.setStatus('online'); // статус невидимки
-			client.user.setActivity(config.prefix + 'help'); // играет в <prefix>help
+			client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
 			let embed = new Discord.EmbedBuilder() // составляем embed
 				.setTitle('Logged in')
-				.setColor(config.basecolor)
+				.setColor(nek.config.basecolor)
 				.setDescription(nek.fullname + " is ready to work!\n\nBootloader ver: `" + nek.version + "`\nDiscord ver: `" + this.version + "`")
 				.setTimestamp()
-			const botowner = await client.users.fetch(config.developers[0]); // ищем разработчика по id
+			const botowner = await client.users.fetch(nek.config.developers[0]); // ищем разработчика по id
 			await botowner.send({ embeds: [embed] }); // отправляем разрабу
 		})
 		
 		// СООБЩЕНИЯ
 		async function messageHandler(msg){
-			nek.log('MESSAGE', 'Got message', 'gray');
-			if (msg.author.id === config.developers[0] && msg.content === "ебучие") {
-				msg.reply({content: 'пироги'});
+			if (msg.author.bot) return; // игнор бота
+			//if (nek.config.debug && !bot.settings.developerIDs.includes(userID)) return; 
+			msg.content = msg.content.trim(); // очистка лишних пробелов
+			
+			if (msg.content.substring(0, nek.config.prefix.length).toLowerCase() !== nek.config.prefix) { // проверка префикса
+				return;
+			}
+			
+			if (msg.channel.type === "DM") { // личка
+				nek.log('MESSAGE', 'Got direct message. DM is not supported now', 'gray');
+				return;
+			}
+			;
+			const args = msg.content.split(" "); // разделяем всё сообщение на слова
+			const commName = args[0].slice(nek.config.prefix.length); // Отделяем префикс от названия команды
+			const comm = nek.commands.get(commName); // получаем команду из мапы
+			comm.run(nek, client, msg, args)
+			
+			if (!comm) {
+				let embed = new Discord.EmbedBuilder() // составляем embed
+					.setTitle('Ва?')
+					.setColor(nek.config.basecolor)
+					.setDescription("Нет такой команды чел")
+					.setTimestamp()
+				msg.reply({ embeds: [embed] });
+				return;
 			}
 		}
 		client.on(Discord.Events.MessageCreate, async (msg) => { // если новое сообщение в чате
@@ -72,12 +102,12 @@ class discord {
     }
 	
 	
-	async logErrors(nek, config, totalErrors){ // лог ошибки (totalErrors) в лс первому разработчику, указанному в config.json
+	async logErrors(nek, totalErrors){ // лог ошибки (totalErrors) в лс первому разработчику, указанному в config.json
 	
 		// ВХОД
 		try {
 			nek.log("DISCORD", "Logging in...", "cyan");
-			client.login(config["token_" + this.name]); // логинимся в дискорд
+			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
 		} catch(e) {
 			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
 			console.error(e); // вывод полной ошибки
@@ -96,7 +126,7 @@ class discord {
 					.setDescription('Got errors while loading:\n```' + totalErrors.join('\n\n') + '```')
 					.setTimestamp()
 
-				const botowner = await client.users.fetch(config.developers[0]); // ищем разработчика по id
+				const botowner = await client.users.fetch(nek.config.developers[0]); // ищем разработчика по id
 				await botowner.send({ embeds: [embed] }); // отправляем разрабу
 				nek.log("DISCORD", "Sent! Logging out...", "cyan"); // сообщаем, что всё было отправлено
 				await client.destroy(); // отключаемся от дискорда
