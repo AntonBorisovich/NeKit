@@ -21,10 +21,23 @@ class Info {
 
     run(nek, client, msg, args){
 		let embed = new EmbedBuilder()
-			.setTitle(client.user.username + ' - ' + this.name)
+			.setTitle('Информация о боте')
 			.setColor(nek.basecolor)
-			.setDescription(nek.config.info + '\nРазработчик: <@' + nek.config.developers[0] + '>')
-			.setFooter({ text: 'Версия бота: ' + nek.version + "\nВерсия node: " + process.version + "\nВерсия Discord.js: v14.9.0" });
+
+		let devstring = ""
+		nek.config.developers.forEach(id => {
+			devstring += '<@' + id + '>, ';
+		});
+		devstring = devstring.substring(0, devstring.length - 2)
+
+		let thxstring = ""
+		nek.config.thanks.forEach(id => {
+			thxstring += '<@' + id + '>, ';
+		});
+		thxstring = thxstring.substring(0, thxstring.length - 2)
+
+		embed.setDescription(nek.config.info + '\n\nРазработчики: ' + devstring + '\nБлагодарности: ' + thxstring)
+
 		msg.reply({ embeds: [embed] });
 	}
 	

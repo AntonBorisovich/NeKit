@@ -42,7 +42,6 @@ class discord {
 		// СООБЩЕНИЯ
 		async function messageHandler(msg){
 			if (msg.author.bot) return; // игнор бота
-			//if (nek.config.debug && !bot.settings.developerIDs.includes(userID)) return; 
 			msg.content = msg.content.trim(); // очистка лишних пробелов
 			
 			if (msg.content.substring(0, nek.config.prefix.length).toLowerCase() !== nek.config.prefix) { // проверка префикса
