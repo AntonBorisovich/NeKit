@@ -53,7 +53,7 @@ class discord {
 				nek.log('MESSAGE', 'Got direct message. DM is not supported now', 'gray');
 				return;
 			}
-			;
+
 			const args = msg.content.split(" "); // разделяем всё сообщение на слова
 			const commName = args[0].slice(nek.config.prefix.length); // Отделяем префикс от названия команды
 			const comm = nek.commands.get(commName); // получаем команду из мапы
