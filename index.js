@@ -138,8 +138,7 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 // === НАЧАЛО РАБОТЫ === //
 nek.log('BOOTLOADER', 'Bootloader started!'); // информируем, что загрузчик успешно задал основные функции
 
-nek.launch_time = Date.now(); 	// запоминаем время запуска
-//let config; 					// временная переменная для загрузки конфигов
+nek.launch_time = Date.now();  // запоминаем время запуска
 const os = require('os'); 		// подключение библиотеки получение данных о системе (os)
 const fs = require("fs"); 		// подключение библиотеки файловой системы (fs)
 
@@ -233,6 +232,36 @@ if (nek.config.name) { // если есть имя
 } else {
 	nek.log("WARNING", "No custom name provided! Falling to \"NeKit\"", "yellow"); // информируем о смене имени
 	nek.name = "NeKit"; // меняем имя
+}
+
+// Загрузка пользовательских настроек (конфига)
+nek.log('BOOTLOADER', 'Reading secrets...', false, true); // информируем, что начинаем читать секреты и токены
+try {
+	const secrets = require('./src/config/secrets.json'); // читаем файл конфига
+	nek.config["token_" + nek.config.socfile] = secrets["token_" + nek.config.socfile] // пишем токен из секретов в токен
+	nek.config.Secret2FA = secrets.Secret2FA // пишем секрет из секретов в токен
+	nek.simplelog('OK!', 'green'); // информируем, что конфиг успешно считаны
+} catch(e) {
+	nek.simplelog('ERR!', 'red'); // всё хреново
+	console.error(e); // выводим ошибку
+	process.exit(1); // выходим
+}
+
+// === ЗАДАЁМ ФУНКЦИИ ВСЯКИЕ ДЛЯ ИСПОЛЬЗОВАНИЯ В БУДУЩЕМ === //
+
+nek.Update2FASecret = (secret) => { // проверка 2FA кода
+	const twofactor = require("node-2fa");
+	const fileName = './src/config/secrets.json';
+	const file = require(fileName); // читаем json
+	file.Secret2FA = secret; // добавляем/изменяем секрет
+	try {
+		fs.writeFile(fileName, JSON.stringify(file), (err) => { // пишем новый файл
+			if (err) throw(err);
+		});
+	} catch (e) {
+		return e;
+	}
+	return 'done';
 }
 
 

@@ -9,6 +9,9 @@ const client = new Discord.Client({
 	partials: [Discord.Partials.Channel]
 });
 
+let works = new Map(); // мапа, где хрянятся все команды, которые всё ещё обрабатываются
+let shuttingDown = false; // TODO: если true, то новые команды не будут исполнятся
+
 class discord {
     constructor(nek){
 		this.name = "discord";
@@ -20,6 +23,7 @@ class discord {
 		try {
 			nek.log("DISCORD", "Logging in...", "cyan");
 			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
+			nek.config["token_" + this.name] = null;
 		} catch(e) {
 			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
 			console.error(e); // вывод полной ошибки
@@ -56,9 +60,8 @@ class discord {
 			const args = msg.content.split(" "); // разделяем всё сообщение на слова
 			const commName = args[0].slice(nek.config.prefix.length); // Отделяем префикс от названия команды
 			const comm = nek.commands.get(commName); // получаем команду из мапы
-			comm.run(nek, client, msg, args)
 			
-			if (!comm) {
+			if (!comm) { // если команда не найдена
 				let embed = new Discord.EmbedBuilder() // составляем embed
 					.setTitle('Ва?')
 					.setColor(nek.config.basecolor)
@@ -67,6 +70,45 @@ class discord {
 				msg.reply({ embeds: [embed] });
 				return;
 			}
+			
+			if (comm.TWOFA) { // если для запуска нужна двухфакторка
+				nek.log('MESSAGE', 'Got 2FA command. Checking 2FA...', 'gray');
+				const twofacomm = nek.commands.get('2fa')
+				if (!twofacomm) { // проверяем есть ли вообще команда 2FA
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('Команда 2FA не найдена!')
+						.setColor(nek.config.basecolor)
+						.setDescription("Это невозможно, но команда 2FA не найдена. Вы не можете использовать 2FA команды")
+					msg.reply({ embeds: [embed] });
+					return;
+				}
+
+				const Pass2FA = await twofacomm.Check2FA(nek, args[args.length-1]);
+				if (!Pass2FA) { // если получили отрицательный ответ
+					nek.log('MESSAGE', 'Wrong 2FA code', 'gray');
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('Неверный код')
+						.setColor(nek.config.basecolor)
+						.setDescription("Ваш код 2FA не подходит!")
+					msg.reply({ embeds: [embed] });
+					return;
+				}
+				if (Pass2FA === "no_secret") { // если нету секрета
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Секрет не задан. Попробуйте создать его через `" + nek.config.prefix + "2fa create`")
+					msg.reply({ embeds: [embed] });
+					return;
+				}
+				delete args[args.length - 1] // удаляем код 2FA из аргументов после успешной проверки
+			}
+			console.log(args)
+			works.set(msg.id, comm.name) // запоминаем, что мы начали работу над этой командой
+			nek.log('MESSAGE', 'Executed command ' + comm.name + ' (' + msg.id + ')', 'gray');
+			await comm.run(nek, client, msg, args);
+			works.delete(msg.id); // удаляем, т.к. мы закончили работу
+			//nek.log('MESSAGE', 'Done with command ' + comm.name + ' (' + msg.id + ')', 'gray');
 		}
 		client.on(Discord.Events.MessageCreate, async (msg) => { // если новое сообщение в чате
 			messageHandler(msg); // обработать

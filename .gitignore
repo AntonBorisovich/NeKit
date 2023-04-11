@@ -129,3 +129,4 @@ dist
 # nekit
 config.json
 cmd.lnk
+src/config/secrets.json

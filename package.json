@@ -21,6 +21,7 @@
   "homepage": "https://github.com/AntonBorisovich/NeKit#readme",
   "dependencies": {
     "canvas": "^2.11.2",
-    "discord.js": "^14.9.0"
+    "discord.js": "^14.9.0",
+    "node-2fa": "^2.0.3"
   }
 }

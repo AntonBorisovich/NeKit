@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const Discord = require("discord.js");
 
 class Help {
     constructor(nek, config){
@@ -25,7 +25,7 @@ class Help {
 			}
 			cmds[cmd.category].push("`" + cmd.name + "`"); // пихаем название команды в категорию
 		});
-		let embed = new EmbedBuilder() // составляем embed
+		let embed = new Discord.EmbedBuilder() // составляем embed
 			.setTitle('Список команд') // заголовок
 			.setColor(nek.config.basecolor) // цвет
 		for (const cat in cmds) { // смотрим все категории

@@ -1,4 +1,4 @@
-class Test {
+class Settings {
     constructor(nek, config){
 		
 		//задать полученые значения для дальнейшего использования в коде команды
@@ -23,5 +23,5 @@ class Test {
 	
 }
 
-module.exports = Test
+module.exports = Settings
 
