@@ -270,57 +270,56 @@ nek.Update2FASecret = (secret) => { // проверка 2FA кода
 // Чтение функций
 function loadFunctions() {
 	nek.log('BOOTLOADER', 'Loading functions...', false, true);
-	let nekFuncs = new Map(); // создаём мапу функций
+	nek.functions = new Map(); // создаём мапу функций
 	let funcErrs = []; // создаём массив ошибок
 	const dir = fs.readdirSync('./src/functions/'); // смотрим папку с функциями
 	for ( const file of dir ) { // перебираем все файлы
 		try {
 			if (file.endsWith(".js")) { // если .js то работать
-				let fileName = file.substring(0,file.length-3);
-				let fncPrototype = require("./src/functions/"+fileName); // читаем файл
-				let func = new fncPrototype(nek); // вытаскиваем из файла функцию
-				nekFuncs.set(func.name, func); // пишем фунцкию в мапу
+				const fileName = file.substring(0,file.length-3);
+				const fncPrototype = require("./src/functions/"+fileName); // читаем файл
+				const func = new fncPrototype(nek); // вытаскиваем из файла функцию
+				nek.functions.set(func.name, func); // пишем фунцкию в мапу
 			}
 		} catch(e) {
 			funcErrs.push({file: file, error: e});
 		}
 	}
-	return {map: nekFuncs, errors: funcErrs};
+	return funcErrs;
 }
 // Чтение команд
 function loadCommands() {
 	nek.log('BOOTLOADER', 'Loading commands...', false, true);
-	let nekComms = new Map(); // создаём мапу команд
+	nek.commands = new Map(); // создаём мапу команд
 	let commErrs = []; // создаём массив ошибок
 	const dir = fs.readdirSync('./src/commands/'); // смотрим папку с командами
 	for ( const file of dir ) { 
 		try {
 			if (file.endsWith(".js")) { // если .js то работать
-				let fileName = file.substring(0,file.length-3);
-				let cmdPrototype = require("./src/commands/"+fileName); // читаем файл
-				let command = new cmdPrototype(nek); // вытаскиваем из файла функцию
-				nekComms.set(command.name, command); // пишем команду в мапу
+				const fileName = file.substring(0,file.length-3);
+				const cmdPrototype = require("./src/commands/"+fileName); // читаем файл
+				const command = new cmdPrototype(nek); // вытаскиваем из файла функцию
+				nek.commands.set(command.name, command); // пишем команду в мапу
 			}
 		} catch(e) {
 			commErrs.push({file: file, error: e});
 		}
 	}
-	return {map: nekComms, errors: commErrs};
+	return commErrs;
 }
 
 
 // === ЧТЕНИЕ ФУНКЦИЙ И КОМАНД: РАБОТАЕМ === //
 
 let totalErrors = []; // массив кратких ошибок. Нужен, что бы в дальнейшем выпукнуть краткий лог в лс разработчику
-
 // Функции
 let nekFuncs = loadFunctions(); // читаем функции
-if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, то всё ок
+if (!nekFuncs[0]) { // если нет ни единой ошибки, то всё ок
 	nek.simplelog('OK!', 'green');
 } else { // если есть хоть одна ошибка, то проверить все
 	nek.simplelog('ERR!', 'red'); // пишем статус ошибки
 	nek.log('ERROR', 'Caught error(s) while loading function(s)!', 'red'); // пишем, что произошли ошибки
-	for (const err of nekFuncs.errors) { // начинаем перечислять все ошибки в косноль
+	for (const err of nekFuncs) { // начинаем перечислять все ошибки в косноль
 		nek.simplelog('> ' + err.file + ' <  Error log below:', 'red');
 		console.error(err.error); // пишем полную ошибку в консоль
 		totalErrors.push(err.error.name + ": " + err.error.message + "\n>" + err.error.stack.slice(0, err.error.stack.indexOf('\n'))); // добавляем краткую ошибку в массив
@@ -329,17 +328,14 @@ if (!nekFuncs.errors[0]) { // если нет ни единой ошибки, т
 		// >файл_где_произошла_ошибка:строка
 	}
 }
-nek.functions = nekFuncs.map;
-nekFuncs = null; // чистим память
-
 // Команды
 let nekComms = loadCommands(); // читаем команды
-if (!nekComms.errors[0]) { // если нет ни единой ошибки, то всё ок
+if (!nekComms[0]) { // если нет ни единой ошибки, то всё ок
 	nek.simplelog('OK!', 'green');
 } else { // если есть хоть одна ошибка, то проверить все
 	nek.simplelog('ERR!', 'red'); // пишем статус ошибки
 	nek.log('ERROR', 'Caught error(s) while loading command(s)!', 'red'); // пишем, что произошли ошибки
-	for (const err of nekComms.errors) { // начинаем перечислять все ошибки в косноль
+	for (const err of nekComms) { // начинаем перечислять все ошибки в косноль
 		nek.simplelog('> ' + err.file + ' <  Error log below:', 'red');
 		console.error(err.error); // пишем полную ошибку в консоль
 		totalErrors.push(err.error.name + ": " + err.error.message + "\n>" + err.error.stack.slice(0, err.error.stack.indexOf('\n'))); // добавляем краткую ошибку в массив
@@ -348,8 +344,6 @@ if (!nekComms.errors[0]) { // если нет ни единой ошибки, т
 		// >файл_где_произошла_ошибка:строка
 	}
 }
-nek.commands = nekComms.map;
-nekComms = null; // чистим память
 
 // Вход в сеть
 try {
@@ -366,8 +360,6 @@ try {
 			return;
 		}
 	}
-	//console.log(nek);
-	//return;
 	social.start(nek);
 } catch(e) {
 	nek.log('ERROR', 'Failed to load socfile!', 'red');

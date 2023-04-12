@@ -1,5 +1,5 @@
 class Dev {
-    constructor(nek, config){
+    constructor(nek){
 		
 		//задать полученые значения для дальнейшего использования в коде команды
 		//this.nek = nek;
@@ -7,7 +7,7 @@ class Dev {
 		
 		this.category = "utility"; // категория команд
 		this.hidden = true; // можно ли отображать команду в общем списке
-		this.TWOFA = true; // нужна двухфакторка для работы
+		this.TWOFA = false; // нужна двухфакторка для работы
 		
 		this.perms = [];
         this.name = "dev"; // имя команды
@@ -23,22 +23,32 @@ class Dev {
 			msg.reply({content: 'агде'})
 			return;
 		}
-		switch(args[1].toLowerCase()) {
-			case 'reload':
+		if (args[1] === 'reloadfunc') {
+				const reloadFunc = nek.functions.get('reloader');
 				if (!args[2]) {
-					console.log(nek)
-					console.log(client)
-					nek.restart(nek, client)
+					reloadFunc.reload(nek, 'ALL', 'functions');
+					msg.reply({content: 'перезагрузил все функции'});
 					return;
 				}
-				if (args[2].toLowerCase() === "commands" && args[2].toLowerCase() === "comms") {
-					nek.restart('commands')
-				}
-				if (args[2].toLowerCase() === "functions" && args[2].toLowerCase() === "funcs") {
-					nek.restart('functions')
-				}	
-				break;
-		return;
+				reloadFunc.reload(nek, args[2], 'functions');
+				msg.reply({content: 'перезагрузил функцию `' + args[2] + '`'});
+				return;
+		} else if (args[1] === 'reloadcomm') {
+				const reloadFunc = nek.functions.get('reloader');
+				if (!args[2]) {
+					reloadFunc.reload(nek, 'ALL', 'commands');
+					msg.reply({content: 'перезагрузил все команды'});
+					return;
+				};
+				reloadFunc.reload(nek, args[2], 'commands');
+				msg.reply({content: 'перезагрузил команду `' + args[2] + '`'})
+				return;
+		} else if (args[1] === 'reload') {
+				const reloadFunc = nek.functions.get('reloader');
+				reloadFunc.reload(nek, 'ALL', 'commands');
+				reloadFunc.reload(nek, 'ALL', 'functions');
+				msg.reply({content: 'перезагрузил вообще всё'});
+				return;
 		}
 	}
 	

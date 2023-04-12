@@ -62,12 +62,11 @@ class discord {
 			const comm = nek.commands.get(commName); // получаем команду из мапы
 			
 			if (!comm) { // если команда не найдена
-				let embed = new Discord.EmbedBuilder() // составляем embed
-					.setTitle('Ва?')
-					.setColor(nek.config.basecolor)
-					.setDescription("Нет такой команды чел")
-					.setTimestamp()
-				msg.reply({ embeds: [embed] });
+				// let embed = new Discord.EmbedBuilder() // составляем embed
+					// .setTitle('Ва?')
+					// .setColor(nek.config.basecolor)
+					// .setDescription("Нет такой команды чел")
+				// msg.reply({ embeds: [embed] });
 				return;
 			}
 			
@@ -103,12 +102,12 @@ class discord {
 				}
 				delete args[args.length - 1] // удаляем код 2FA из аргументов после успешной проверки
 			}
-			console.log(args)
+
 			works.set(msg.id, comm.name) // запоминаем, что мы начали работу над этой командой
 			nek.log('MESSAGE', 'Executed command ' + comm.name + ' (' + msg.id + ')', 'gray');
-			await comm.run(nek, client, msg, args);
+			await comm.run(nek, client, msg, args); // запускаем команду
 			works.delete(msg.id); // удаляем, т.к. мы закончили работу
-			//nek.log('MESSAGE', 'Done with command ' + comm.name + ' (' + msg.id + ')', 'gray');
+			nek.log('MESSAGE', 'Done with command ' + comm.name + ' (' + msg.id + ')', 'gray');
 		}
 		client.on(Discord.Events.MessageCreate, async (msg) => { // если новое сообщение в чате
 			messageHandler(msg); // обработать
