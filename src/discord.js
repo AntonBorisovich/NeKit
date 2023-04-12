@@ -10,7 +10,7 @@ const client = new Discord.Client({
 });
 
 let works = new Map(); // мапа, где хрянятся все команды, которые всё ещё обрабатываются
-let shuttingDown = false; // TODO: если true, то новые команды не будут исполнятся
+let shuttingDown = false; // если true, то новые команды не будут исполнятся
 
 class discord {
     constructor(nek){
@@ -19,18 +19,46 @@ class discord {
     }
 
     async start(nek){ // нормальная работа
+		
+		nek.reconnect = () => { // функция переподключения
+			nek.log('DISCORD', 'Reconnecting...', 'cyan')
+			if (works.size !== 0) { // если никто не юзает бота сейчас
+				shuttingDown = true; // запрещаем обращаться к боту
+				client.user.setStatus('idle'); // статус не на месте
+				client.user.setActivity('Переподключаюсь...'); // играет в Переподключаюсь...
+				nek.log('DISCORD', 'Someone is using bot right now. Trying again in 5 seconds...', 'cyan')
+				setTimeout(() => { // пробуем ещё раз через 5 секунд.
+					nek.reconnect();
+				}, 5000);
+				return;
+			}
+			nek.log('DISCORD', 'Logging out...', 'cyan', true)
+			client.destroy(); // выходим
+			nek.simplelog('OK!', 'green')
+			nek.log('DISCORD', 'Logging in...', 'cyan', true)
+			client.login(nek.config["token_" + this.name]); // входим
+			nek.simplelog('OK!', 'green')
+			setTimeout(() => { // задаем статусы через 10 секунд ибо discord moment
+				shuttingDown = false; // разрешаем обращаться к боту
+				client.user.setStatus('online'); // статус невидимки
+				client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
+			}, 10000);
+			return;
+		}
+		
 		// ВХОД
 		try {
-			nek.log("DISCORD", "Logging in...", "cyan");
+			nek.log("DISCORD", "Logging in...", "cyan", );
 			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
-			nek.config["token_" + this.name] = null;
+			//nek.config["token_" + this.name] = null;
 		} catch(e) {
 			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
 			console.error(e); // вывод полной ошибки
 			process.exit(1); // закрываем бота
 		}
+		
 		client.once(Discord.Events.ClientReady, async () => { // когда залогинились
-			nek.log("DISCORD", "Logged in as " + client.user.tag, 'cyan'); // логируем что залогинились
+			nek.log("DISCORD", "Logged in as " + client.user.tag, "cyan"); // логируем что залогинились
 			nek.log("READY", `Total launch time: ${((Date.now() - nek.launch_time) / 1000 )}s`);
 			client.user.setStatus('online'); // статус невидимки
 			client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
@@ -45,6 +73,7 @@ class discord {
 		
 		// СООБЩЕНИЯ
 		async function messageHandler(msg){
+			if (shuttingDown) return; // если мы вырубаемся, то игнорим всех
 			if (msg.author.bot) return; // игнор бота
 			msg.content = msg.content.trim(); // очистка лишних пробелов
 			
@@ -100,11 +129,11 @@ class discord {
 					msg.reply({ embeds: [embed] });
 					return;
 				}
-				delete args[args.length - 1] // удаляем код 2FA из аргументов после успешной проверки
+				args.pop() // удаляем код 2FA из аргументов после успешной проверки
 			}
 
 			works.set(msg.id, comm.name) // запоминаем, что мы начали работу над этой командой
-			nek.log('MESSAGE', 'Executed command ' + comm.name + ' (' + msg.id + ')', 'gray');
+			nek.log('MESSAGE', 'Executed command ' + comm.name + '  (' + msg.id + ')', 'gray');
 			await comm.run(nek, client, msg, args); // запускаем команду
 			works.delete(msg.id); // удаляем, т.к. мы закончили работу
 			nek.log('MESSAGE', 'Done with command ' + comm.name + ' (' + msg.id + ')', 'gray');

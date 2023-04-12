@@ -52,8 +52,6 @@ class TwoFA {
 						.setColor(nek.config.basecolor)
 						.setDescription("Вам был отправлен ключ (секрет), так как он не был задан ранее. Для его закрепления вам нужно ввести `" + nek.config.prefix + this.name + " verify <код>`")
 					msg.reply({ embeds: [embed] });
-					
-					console.log(tempSecret2FA)
 					// сообщение в лс
 					embed = new Discord.EmbedBuilder() 
 						.setTitle('Новый 2FA')
@@ -76,8 +74,38 @@ class TwoFA {
 					break;
 				}
 				
-				// TODO: обновление секрета
-				
+				// обновление секрета
+				if (msg.author.id !== nek.config.developers[0]) { // если автор сообщения не разработчик, то забить
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Секрет может обновить только разработчик")
+					msg.reply({ embeds: [embed] });
+					break;
+				}
+				if (this.Check2FA(nek, args[2])?.delta === 0) { // если код подошёл
+					tempSecret2FA = twofactor.generateSecret({ name: nek.fullname, account: nek.name }); // создаём временный секрет
+					
+					// публичное сообщение
+					let embed = new Discord.EmbedBuilder() 
+						.setTitle('Новый 2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Вам был отправлен новый ключ (секрет). Для его закрепления вам нужно ввести `" + nek.config.prefix + this.name + " verify <код>`")
+					msg.reply({ embeds: [embed] });
+
+					// сообщение в лс
+					embed = new Discord.EmbedBuilder() 
+						.setTitle('Новый 2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription(
+							"Прикинь, этот текст здесь потому, что первую строку мессенджеры не хотят прятать в спойлер и спокойно показывают секретный код всем желающим.\n" +
+							"И всё таки вот твой код:\n\n" +
+							"Ключ - ||" + tempSecret2FA.secret + "||\n\n" +
+							"Можно и нажать - [Открыть 2FA приложение](" + tempSecret2FA.uri + ")"
+						)
+					msg.author.send({ embeds: [embed], files:[{attachment: tempSecret2FA.qr, name: "SPOILER_chart.png"}] });
+					break;
+				}
 				break;
 			case 'verify': // проверка чего либо. Можно как проверить актуальность секрета у пользователя, так и закрепить новый секрет, если он был ранее создан в 2fa create и требует подтверждения
 				if (!args[2]) { // если нету никакого кода, то забить
@@ -94,7 +122,7 @@ class TwoFA {
 						let embed = new Discord.EmbedBuilder()
 							.setTitle('2FA')
 							.setColor(nek.config.basecolor)
-							.setDescription("Проверка пройдена. Бот сейчас уйдет на перезагрузку, что бы обновить секрет. Подождите немного, и сможете пользоватся")
+							.setDescription("Проверка пройдена. Новый ключ (секрет) записан")
 						msg.reply({ embeds: [embed] });
 						const updsecret = nek.Update2FASecret(tempSecret2FA.secret); // пытаемся записать новый секрет в файл
 						tempSecret2FA = null; // убираем временный токен
@@ -106,8 +134,6 @@ class TwoFA {
 							msg.reply({ embeds: [embed] });
 							break;
 						}
-						//nek.restart(); // пока что не получилось делать полную перезагрузку.
-						process.exit(0) // TODO: научить загрузчик перезагружать команды и перезагрузить их тут
 						break;
 					}
 					
@@ -135,14 +161,30 @@ class TwoFA {
 						break;
 					}
 				}
-				if (!nek.Secret2FA) {
+				if (!nek.config.Secret2FA) {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
-						.setDescription("ам. пук среньк")
+						.setDescription("ам. пук среньк. где секрет то?")
 					msg.reply({ embeds: [embed] });
 					break;
 				}
+				if (this.Check2FA(nek, args[2])) {
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Верный код")
+					msg.reply({ embeds: [embed] });
+					break;
+				} else {
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.errorcolor)
+						.setDescription("Неа. Код не подошёл")
+					msg.reply({ embeds: [embed] });
+					break;
+				}
+				break;
 			return;
 		}
 	}
@@ -151,7 +193,7 @@ class TwoFA {
 		if (!nek?.config.Secret2FA) {
 			return 'no_secret';
 		}
-		if (twofactor.verifyToken(nek.config.Secret2FA, code).delta === 0) {
+		if (twofactor.verifyToken(nek.config.Secret2FA, code)?.delta === 0) {
 			return true;
 		}
 		return false;

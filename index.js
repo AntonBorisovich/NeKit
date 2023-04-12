@@ -258,6 +258,7 @@ nek.Update2FASecret = (secret) => { // проверка 2FA кода
 		fs.writeFile(fileName, JSON.stringify(file), (err) => { // пишем новый файл
 			if (err) throw(err);
 		});
+		nek.config.Secret2FA = secret
 	} catch (e) {
 		return e;
 	}

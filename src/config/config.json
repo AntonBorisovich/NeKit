@@ -1,0 +1,11 @@
+{
+	"basecolor": "#F36B00",
+	"errorcolor": "#F00000",
+	"name": "NeKit",
+	"prefix": "nk!",
+	"info": "крутямбовый бот",
+	"socfile": "discord",
+	
+	"developers": ["391635525603426305"],
+	"thanks": ["505801500077981721"]
+}
