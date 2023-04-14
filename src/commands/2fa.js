@@ -69,7 +69,7 @@ class TwoFA {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
-						.setDescription("Введите `" + nek.config.prefix + this.name + " create <код>` что бы заново сгенерировать секрет.")
+						.setDescription("Введите `" + nek.config.prefix + this.name + " create <код>` что бы заново сгенерировать ключ (секрет)")
 					msg.reply({ embeds: [embed] });
 					break;
 				}
@@ -83,7 +83,7 @@ class TwoFA {
 					msg.reply({ embeds: [embed] });
 					break;
 				}
-				if (this.Check2FA(nek, args[2])?.delta === 0) { // если код подошёл
+				if (this.Check2FA(nek, args[2])) { // если код подошёл
 					tempSecret2FA = twofactor.generateSecret({ name: nek.fullname, account: nek.name }); // создаём временный секрет
 					
 					// публичное сообщение
@@ -125,7 +125,7 @@ class TwoFA {
 							.setDescription("Проверка пройдена. Новый ключ (секрет) записан")
 						msg.reply({ embeds: [embed] });
 						const updsecret = nek.Update2FASecret(tempSecret2FA.secret); // пытаемся записать новый секрет в файл
-						tempSecret2FA = null; // убираем временный токен
+						tempSecret2FA = false; // убираем временный токен
 						if (updsecret !== 'done') { // если чето пошло не так, то сообщить об этом
 							let embed = new Discord.EmbedBuilder()
 								.setTitle('2FA')
@@ -134,6 +134,12 @@ class TwoFA {
 							msg.reply({ embeds: [embed] });
 							break;
 						}
+						
+						// TODO: Удаление сообщения после записи нового секрета
+						
+						//tempMsg.delete();
+						//tempMsg.channel.send({content: '*Сообщение удалено. Ключей не будет*'});
+						//tempMsg = false;
 						break;
 					}
 					
