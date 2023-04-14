@@ -26,7 +26,7 @@ class TwoFA {
 			let embed = new Discord.EmbedBuilder()
 				.setTitle('2FA')
 				.setColor(nek.config.basecolor)
-				.setDescription("Без аргументов я ниче тебе сделать не могу. Можешь ввести " + nek.config.prefix + "help " + this.name + "для просмотра аргументов")
+				.setDescription("Без аргументов я ниче тебе сделать не могу. Можешь ввести " + nek.config.prefix + "help " + this.name + " для просмотра аргументов")
 			msg.reply({ embeds: [embed] });
 			return;
 		}

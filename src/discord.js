@@ -69,7 +69,7 @@ class discord {
 			let embed = new Discord.EmbedBuilder() // составляем embed
 				.setTitle('Logged in')
 				.setColor(nek.config.basecolor)
-				.setDescription(nek.fullname + " is ready to work!\n\nBootloader ver: `" + nek.version + "`\nDiscord ver: `" + this.version + "`")
+				.setDescription(nek.fullname + " is ready to work!\n\nBootloader ver: `" + nek.version + "`\n" + this.name + " ver: `" + this.version + "`")
 				.setTimestamp()
 			const botowner = await client.users.fetch(nek.config.developers[0]); // ищем разработчика по id
 			await botowner.send({ embeds: [embed] }); // отправляем разрабу
@@ -221,7 +221,6 @@ class discord {
 					.setColor('#FF0000')
 					.setDescription('Got errors while loading:\n```' + totalErrors.join('\n\n') + '```')
 					.setTimestamp()
-
 				const botowner = await client.users.fetch(nek.config.developers[0]); // ищем разработчика по id
 				await botowner.send({ embeds: [embed] }); // отправляем разрабу
 				nek.log("DISCORD", "Sent! Logging out...", "cyan"); // сообщаем, что всё было отправлено
