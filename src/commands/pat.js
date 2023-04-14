@@ -2,7 +2,7 @@ const Discord = require("discord.js");
 const pet = require('pet-pet-gif');
 
 class Pat {
-    constructor(client, config, commands, customvars){
+    constructor(nek){
 		
 		this.perms = [];
 		this.category = "fun";

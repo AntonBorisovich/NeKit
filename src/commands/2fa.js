@@ -3,7 +3,7 @@ const Discord = require("discord.js");
 let tempSecret2FA = false;
 
 class TwoFA {
-    constructor(nek, config){
+    constructor(nek){
 		this.version = 'dev'
 		//задать полученые значения для дальнейшего использования в коде команды
 		//this.nek = nek;

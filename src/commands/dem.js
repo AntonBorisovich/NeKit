@@ -36,7 +36,7 @@ const demotivatorImage = async (img, title, subtitle, width, height) => {
 }
 
 class Dem {
-    constructor(nek, commands){
+    constructor(nek){
 		//задать полученые значения для дальнейшего использования в коде команды
 		this.category = "img";
 		//this.twofa = false; // запуск только разработчикам

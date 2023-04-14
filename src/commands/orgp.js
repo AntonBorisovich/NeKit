@@ -25,7 +25,7 @@ if (os.platform().startsWith('win')){
 	useragent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/108.0.0.0 Safari/537.36"
 }
 class Orgp {
-	constructor(){
+	constructor(nek){
 		
 		this.category = "info"
 		

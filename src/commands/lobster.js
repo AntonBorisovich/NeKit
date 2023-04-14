@@ -40,7 +40,7 @@ const demotivatorImage = async (img, title, width, height) => {
 }
 
 class Lobster {
-    constructor(client, config, commands, customvars){
+    constructor(nek){
 		this.category = "img";
 		
 		this.perms = ["AttachFiles"];

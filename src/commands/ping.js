@@ -1,7 +1,7 @@
 const Discord = require("discord.js");
 
 class Ping {
-    constructor(nek, config){
+    constructor(nek){
 		//задать полученые значения для дальнейшего использования в коде команды
 		this.version = "v1";
 		

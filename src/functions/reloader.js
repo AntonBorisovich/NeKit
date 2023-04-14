@@ -3,6 +3,7 @@ const fs = require("fs");
 class ReLoader {
     constructor(nek){
         this.name = "reloader"; // имя команды
+		this.version = "1.0"
     }
 
     load(nek, name, mode){ // загрузить новую команду/функцию

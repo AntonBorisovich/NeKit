@@ -84,11 +84,6 @@ class discord {
 			if (msg.content.substring(0, nek.config.prefix.length).toLowerCase() !== nek.config.prefix) { // проверка префикса
 				return;
 			}
-			
-			if (msg.channel.type === "DM") { // личка
-				nek.log('MESSAGE', 'Got direct message. DM is not supported now', 'gray');
-				return;
-			}
 
 			const args = msg.content.split(" "); // разделяем всё сообщение на слова
 			const commName = args[0].slice(nek.config.prefix.length); // Отделяем префикс от названия команды
@@ -103,13 +98,40 @@ class discord {
 				return;
 			}
 			
+			if (msg.channel.type !== "DM" && msg.channel.type !== "GroupDM") { // если не личка, то проверить права
+				const permsFunc = nek.functions.get("perms");
+				const failPerms = permsFunc.checkPerms(nek, client, msg, ["SEND_MESSAGES", ...comm.perms]);
+				if (failPerms[0]) { // если есть хоть одно отсутствующее право то стоп-кран
+					nek.log('MESSAGE', 'Missing permission(s) [' + failPerms.join(', ') + '] for "' + comm.name + '" (' + msg.id + ')', 'gray')
+					if (!permsFunc.checkPerms(nek, client, msg, ["SEND_MESSAGES", "EMBED_LINKS"])[0]) { // если можно печатать с эмбедами, то отправить ошибку эмбедом
+						let embed = new Discord.EmbedBuilder()
+							.setTitle('Нету нужных прав')
+							.setColor(nek.config.errorcolor)
+							.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\n[Что значат эти буквы?](https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags)')
+						msg.reply({ embeds: [embed] });
+						return;
+					} else if (!permsFunc.checkPerms(nek, client, msg, ["SEND_MESSAGES"])[0]) { // если вообще можно печатать, то отправить ошибку текстом
+						msg.reply({content: '**ОШИБКА:**\nДля работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\nЧто значат эти буквы?: https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags'})
+						return;
+					} else { // если нельзя печатать, то отправить ошибку в лс
+						let embed = new Discord.EmbedBuilder()
+							.setTitle('Нету нужных прав')
+							.setColor(nek.config.errorcolor)
+							.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\nСообщите об этом владельцу сервера!')
+						msg.author.send({ embeds: [embed] });
+						return;
+					}
+					return;
+				}
+			}
+			
 			if (comm.TWOFA) { // если для запуска нужна двухфакторка
 				nek.log('MESSAGE', 'Got 2FA command. Checking 2FA...', 'gray');
 				const twofacomm = nek.commands.get('2fa')
 				if (!twofacomm) { // проверяем есть ли вообще команда 2FA
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('Команда 2FA не найдена!')
-						.setColor(nek.config.basecolor)
+						.setColor(nek.config.errorcolor)
 						.setDescription("Это невозможно, но команда 2FA не найдена. Вы не можете использовать 2FA команды")
 					msg.reply({ embeds: [embed] });
 					return;
@@ -120,7 +142,7 @@ class discord {
 					nek.log('MESSAGE', 'Wrong 2FA code', 'gray');
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('Неверный код')
-						.setColor(nek.config.basecolor)
+						.setColor(nek.config.errorcolor)
 						.setDescription("Код не подошёл или вы его не указали. Напишите ваш 2FA код в конце сообщения через пробел. Например `" + nek.config.prefix + comm.name + " 013370`")
 					msg.reply({ embeds: [embed] });
 					return;
@@ -128,7 +150,7 @@ class discord {
 				if (Pass2FA === "no_secret") { // если нету секрета
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
-						.setColor(nek.config.basecolor)
+						.setColor(nek.config.errorcolor)
 						.setDescription("Секрет не задан. Попробуйте создать его через `" + nek.config.prefix + "2fa create`")
 					msg.reply({ embeds: [embed] });
 					return;
@@ -137,10 +159,10 @@ class discord {
 			}
 
 			works.set(msg.id, comm.name) // запоминаем, что мы начали работу над этой командой
-			nek.log('MESSAGE', 'Executed  command ' + comm.name + ' (' + msg.id + ')', 'gray');
+			nek.log('MESSAGE', 'Executed  "' + comm.name + '" (' + msg.id + ')', 'gray');
 			await comm.run(nek, client, msg, args); // запускаем команду
 			works.delete(msg.id); // удаляем, т.к. мы закончили работу
-			nek.log('MESSAGE', 'Done with command ' + comm.name + ' (' + msg.id + ')', 'gray');
+			nek.log('MESSAGE', 'Done with "' + comm.name + '" (' + msg.id + ')', 'gray');
 		}
 		client.on(Discord.Events.MessageCreate, async (msg) => { // если новое сообщение в чате
 			messageHandler(msg); // обработать

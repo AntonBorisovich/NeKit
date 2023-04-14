@@ -1,5 +1,7 @@
+const Discord = require("discord.js");
+
 class Test {
-    constructor(nek, config){
+    constructor(nek){
 		
 		//задать полученые значения для дальнейшего использования в коде команды
 		//this.nek = nek;
@@ -8,7 +10,7 @@ class Test {
 		this.category = "test"; // категория команд
 		this.hidden = true; // можно ли отображать команду в общем списке
 		
-		this.perms = ["image", "embed"];
+		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
         this.name = "test"; // имя команды
 		this.desc = "тест desc"; // описание команды в общем списке команд
 		this.advdesc = "тест advdesc"; // описание команды в помоще по конкретной команде
@@ -18,11 +20,11 @@ class Test {
     }
 
     run(nek, client, msg, args){
-		if (!args) {
-			msg.reply({embed: ""}, msg)
-		} else {
-			msg.reply("тест simple text output", msg)
-		}
+		let embed = new Discord.EmbedBuilder() // составляем embed
+			.setTitle('тесто') // заголовок
+			.setColor(nek.config.basecolor) // цвет
+		msg.reply({ embeds: [embed] }); // отправить
+		return;
 	}
 	
 }

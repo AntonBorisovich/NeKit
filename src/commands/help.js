@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
 class Help {
-    constructor(nek, config){
+    constructor(nek){
 		this.version = "dev";
 		
 		//задать полученые значения для дальнейшего использования в коде команды

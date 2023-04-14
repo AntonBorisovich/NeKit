@@ -14,7 +14,7 @@ class React {
 		this.advargs = "<эмодзи> <id>";
     }
 
-    async run(nek, kitsune, msg, args){
+    async run(nek){
 		try {
 			let msgrep = false
 			if (!args[1]){ // если эмодзи не указан

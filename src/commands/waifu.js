@@ -2,12 +2,7 @@ const Discord = require("discord.js")
 const https = require("https");
 
 class waifu {
-    constructor(client, config, commands, customvars){
-		this.customvars = customvars;
-		this.test = true; 
-        this.client = client;
-        this.config = config;
-        this.commands = commands;
+    constructor(nek){
 		this.perms = [""];
 		this.category = "img";
 		this.args = "<тег>";

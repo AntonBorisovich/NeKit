@@ -52,7 +52,7 @@ const LookAtThisImage = async (img, width, height) => {
 }
 
 class Look {
-    constructor(kitsune, config, commands, values){
+    constructor(nek){
 		this.category = "img";
 		//this.twofa = false; // запуск только разработчикам
 		this.perms = ["AttachFiles"];

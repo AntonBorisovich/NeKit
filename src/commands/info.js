@@ -2,7 +2,7 @@ const Discord = require("discord.js");
 const os = require("os");
 
 class Info {
-    constructor(nek, config){
+    constructor(nek){
 		this.version = "dev";
 		
 		this.category = "info"; // категория команд

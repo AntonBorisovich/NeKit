@@ -1,7 +1,7 @@
 const Discord = require("discord.js")
 
 class coinflip {
-    constructor(nek, config){
+    constructor(nek){
 		
 		this.version = "v1"
 		

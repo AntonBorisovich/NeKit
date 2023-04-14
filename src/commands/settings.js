@@ -1,5 +1,5 @@
 class Settings {
-    constructor(nek, config){
+    constructor(nek){
 		this.version = "dev";
 		
 		this.category = "utility"; // категория команд
