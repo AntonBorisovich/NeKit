@@ -2,7 +2,7 @@ const fs = require("fs");
 
 class ReLoader {
     constructor(nek){
-        this.name = "reloader"; // имя команды
+        this.name = "reloader";
 		this.version = "1.0"
     }
 

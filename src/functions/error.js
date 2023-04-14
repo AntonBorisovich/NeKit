@@ -2,7 +2,7 @@ const Discord = require("discord.js");
 
 class Error {
     constructor(nek){
-        this.name = "error"; // имя команды
+        this.name = "error";
 		this.version = "1.0"
     }
 	

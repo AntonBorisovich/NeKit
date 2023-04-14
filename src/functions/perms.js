@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const perm2bit = { // блять как же я ненавижу за это discord.js
+const perm2bit = { // блять как же я ненавижу за это discord.js v14
 	ADD_REACTIONS: Discord.PermissionsBitField.Flags.AddReactions,
 	ADMINISTRATOR: Discord.PermissionsBitField.Flags.Administrator,
 	ATTACH_FILES: Discord.PermissionsBitField.Flags.AttachFiles,
@@ -51,7 +51,7 @@ for (var [key, value] of Object.entries(perm2bit)) { // перебираем к�
 
 class Perms {
     constructor(nek){
-        this.name = "perms"; // имя команды
+        this.name = "perms";
 		this.version = "1.0"
     }
 	
