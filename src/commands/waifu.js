@@ -3,7 +3,7 @@ const https = require("https");
 
 class waifu {
     constructor(nek){
-		this.perms = [""];
+		this.perms = [];
 		this.category = "img";
 		this.args = "<тег>";
 		this.advargs = "```\n" +

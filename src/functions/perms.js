@@ -63,7 +63,7 @@ class Perms {
 	//  msg - msg или interaction
 	//  perms - массив пермишенов ( например: ["READ_MESSAGE_HISTORY", "EMBED_LINKS", "ATTACH_FILES"] )
 	//  > https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags 
-	// ВЫХОД: Discord.PermissionsBitField.Flags.
+	// ВЫХОД:
 	//  Массив тех прав, которые отсутствуют в канале ( например: ["ATTACH_FILES", "EMBED_LINKS"] )
 	//
     checkPerms(nek, client, msg, perms){ 

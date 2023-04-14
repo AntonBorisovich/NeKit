@@ -174,7 +174,7 @@ class discord {
 		})
 		
 		// КНОПКИ, СПИСКИ, СЛЭШ-КОМАНДЫ
-		client.on(Discord.Events.InteractionCreate, async (inter) => {
+		client.on(Discord.Events.InteractionCreate, async (interaction) => {
 				nek.log('INTERACTION', 'Got interaction. Interactions not supported now', 'gray');
 				interaction.reply({ content: 'Интерактивные элементы (кнопки, списки) пока не работают!', ephemeral: true});
 				return;
