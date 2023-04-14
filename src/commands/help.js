@@ -1,6 +1,7 @@
 const Discord = require("discord.js");
 class Help {
     constructor(nek, config){
+		this.version = "dev";
 		
 		//задать полученые значения для дальнейшего использования в коде команды
 		this.category = "info"; // категория команд
@@ -13,7 +14,7 @@ class Help {
 		this.args = ""; // аргументы в общем списке команд
 		this.argsdesc = "<команда> - команда, по которой надо получить информацию"; // описание аргументов в помоще по конкретной команде
 		this.advargs = "<команда>"; // аргументы в помоще по конкретной команде
-		this.version = "dev";
+		
     }
 	
     run(nek, client, msg, args){
@@ -28,19 +29,26 @@ class Help {
 				cmds[cmd.category] = []; // если нет, то создать пустую строку чтоб undefined не было
 			}
 			if (!cmd.hidden || msg.author.id === nek.config.developers[0]) { // если команда не скрытая или автор разраб
-				cmds[cmd.category].push("`" + cmd.name + "`"); // пихаем название команды в категорию
+				if (!cmd.version) {
+					cmds[cmd.category].push("||`" + cmd.name + "`||"); // пихаем название команды в категорию
+				} else {
+					cmds[cmd.category].push("`" + cmd.name + "`"); // пихаем название команды в категорию
+				}
 			}
+			
 		});
 		let embed = new Discord.EmbedBuilder() // составляем embed
 			.setTitle('Список команд') // заголовок
 			.setColor(nek.config.basecolor) // цвет
 		for (const cat in cmds) { // смотрим все категории
-			embed.addFields({ // добавляем field
-				name: "**" + cat + "**", // название категории
-				value: cmds[cat].join(', ') // команды в категории через запятую
-			})
+			if (cmds[cat][0]) { // если в категории есть команды
+				embed.addFields({ // добавляем field
+					name: "**" + cat + "**", // название категории
+					value: cmds[cat].join(', ') // команды в категории через запятую
+				})
+			}
 		}
-		
+		embed.setFooter({text: 'Команды, которые могут работать нестабильно, скрыты за спойлером'})
 		msg.reply({ embeds: [embed] }); // отправить
     }
 	
@@ -62,5 +70,5 @@ class Help {
 	}
 }
 
-module.exports = Help
+module.exports = Help;
 

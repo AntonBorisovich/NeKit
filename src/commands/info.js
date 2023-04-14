@@ -3,10 +3,7 @@ const os = require("os");
 
 class Info {
     constructor(nek, config){
-		
-		//задать полученые значения для дальнейшего использования в коде команды
-		//this.nek = nek;
-        //this.config = config;
+		this.version = "dev";
 		
 		this.category = "info"; // категория команд
 		this.hidden = false; // можно ли отображать команду в общем списке
@@ -20,17 +17,7 @@ class Info {
 		this.advargs = ""; // аргументы в помоще по конкретной команде
     }
 
-    async run(nek, client, msg, args){
-		const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
-		await delay(2000)
-		if (args[1]?.toLowerCase() === "--debug") {
-			debuginfo()
-			return;
-		}
-		baseinfo()
-		
-		
-		
+    run(nek, client, msg, args){
 		function baseinfo(){
 			let embed = new Discord.EmbedBuilder()
 				.setTitle('Информация о боте')
@@ -51,6 +38,7 @@ class Info {
 			embed.setDescription(nek.config.info + '\n\nРазработчики: ' + devstring + '\nБлагодарности: ' + thxstring)
 
 			msg.reply({ embeds: [embed] });
+			return;
 		}
 		
 		function debuginfo(){
@@ -88,7 +76,15 @@ class Info {
 				'```'
 			})
 			msg.reply({ embeds: [embed] });
+			return;
 		}
+		
+		if (args[1]?.toLowerCase() === "--debug") {
+			debuginfo();
+		} else {
+			baseinfo();
+		}
+		return;
 	}
 	
 }

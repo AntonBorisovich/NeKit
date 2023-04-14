@@ -1,9 +1,6 @@
 class Settings {
     constructor(nek, config){
-		
-		//задать полученые значения для дальнейшего использования в коде команды
-		//this.nek = nek;
-        //this.config = config;
+		this.version = "dev";
 		
 		this.category = "utility"; // категория команд
 		this.hidden = false; // можно ли отображать команду в общем списке

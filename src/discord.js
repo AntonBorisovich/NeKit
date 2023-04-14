@@ -19,6 +19,10 @@ class discord {
     }
 
     async start(nek){ // нормальная работа
+		process.on('uncaughtException', function (err) {
+			nek.log('ERROR', 'Got uncaught error! Check log below:', 'red');
+			console.error(err);
+		});
 		
 		nek.reconnect = () => { // функция переподключения
 			nek.log('DISCORD', 'Reconnecting...', 'cyan')
@@ -117,7 +121,7 @@ class discord {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('Неверный код')
 						.setColor(nek.config.basecolor)
-						.setDescription("Ваш код 2FA не подходит!")
+						.setDescription("Код не подошёл или вы его не указали. Напишите ваш 2FA код в конце сообщения через пробел. Например `" + nek.config.prefix + comm.name + " 013370`")
 					msg.reply({ embeds: [embed] });
 					return;
 				}
@@ -133,7 +137,7 @@ class discord {
 			}
 
 			works.set(msg.id, comm.name) // запоминаем, что мы начали работу над этой командой
-			nek.log('MESSAGE', 'Executed command ' + comm.name + '  (' + msg.id + ')', 'gray');
+			nek.log('MESSAGE', 'Executed  command ' + comm.name + ' (' + msg.id + ')', 'gray');
 			await comm.run(nek, client, msg, args); // запускаем команду
 			works.delete(msg.id); // удаляем, т.к. мы закончили работу
 			nek.log('MESSAGE', 'Done with command ' + comm.name + ' (' + msg.id + ')', 'gray');
@@ -147,9 +151,10 @@ class discord {
 			}
 		})
 		
-		// КНОПКИ, СПИСКИ, СЛЭЩ-КОМАНДЫ
+		// КНОПКИ, СПИСКИ, СЛЭШ-КОМАНДЫ
 		client.on(Discord.Events.InteractionCreate, async (inter) => {
 				nek.log('INTERACTION', 'Got interaction. Interactions not supported now', 'gray');
+				interaction.reply({ content: 'Интерактивные элементы (кнопки, списки) пока не работают!', ephemeral: true});
 				return;
 				
 				if (interaction.isChatInputCommand()) {

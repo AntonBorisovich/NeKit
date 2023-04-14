@@ -2,10 +2,7 @@ const Discord = require("discord.js");
 
 class Dev {
     constructor(nek){
-		
-		//задать полученые значения для дальнейшего использования в коде команды
-		//this.nek = nek;
-        //this.config = config;
+		this.version = "dev";
 		
 		this.category = "utility"; // категория команд
 		this.hidden = true; // можно ли отображать команду в общем списке

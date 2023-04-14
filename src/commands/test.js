@@ -6,7 +6,7 @@ class Test {
         //this.config = config;
 		
 		this.category = "test"; // категория команд
-		this.hidden = false; // можно ли отображать команду в общем списке
+		this.hidden = true; // можно ли отображать команду в общем списке
 		
 		this.perms = ["image", "embed"];
         this.name = "test"; // имя команды

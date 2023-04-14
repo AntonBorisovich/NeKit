@@ -22,6 +22,10 @@
   "dependencies": {
     "canvas": "^2.11.2",
     "discord.js": "^14.9.0",
-    "node-2fa": "^2.0.3"
+    "md5": "^2.3.0",
+    "node-2fa": "^2.0.3",
+    "numco": "^1.0.0",
+    "pet-pet-gif": "^1.0.9",
+    "request": "^2.88.2"
   }
 }

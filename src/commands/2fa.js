@@ -4,15 +4,15 @@ let tempSecret2FA = false;
 
 class TwoFA {
     constructor(nek, config){
-		
+		this.version = 'dev'
 		//задать полученые значения для дальнейшего использования в коде команды
 		//this.nek = nek;
         //this.config = config;
 		
 		this.category = "utility"; // категория команд
 		this.hidden = true; // можно ли отображать команду в общем списке
-		
 		this.perms = [];
+		
         this.name = "2fa"; // имя команды
 		this.desc = "Настройка 2FA"; // описание команды в общем списке команд
 		this.advdesc = "Настройка, обновление, проверка 2FA кода"; // описание команды в помоще по конкретной команде
