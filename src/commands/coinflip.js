@@ -5,7 +5,7 @@ class coinflip {
 		
 		this.version = "v1"
 		
-		this.perms = [];
+		this.perms = ["EMBED_LINKS"];
 		this.category = "fun";
 		this.args = "";
 		this.advargs = "";

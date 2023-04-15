@@ -8,7 +8,7 @@ class Info {
 		this.category = "info"; // категория команд
 		this.hidden = false; // можно ли отображать команду в общем списке
 		
-		this.perms = [];
+		this.perms = ["EMBED_LINKS"];
         this.name = "info"; // имя команды
 		this.desc = "информация"; // описание команды в общем списке команд
 		this.advdesc = "Информация о боте"; // описание команды в помоще по конкретной команде

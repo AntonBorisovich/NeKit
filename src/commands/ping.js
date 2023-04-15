@@ -5,7 +5,7 @@ class Ping {
 		//задать полученые значения для дальнейшего использования в коде команды
 		this.version = "v1";
 		
-		this.perms = [""];
+		this.perms = ["EMBED_LINKS"];
 		this.category = "utility";
 		this.args = "";
 		this.advargs = "";

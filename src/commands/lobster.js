@@ -43,7 +43,7 @@ class Lobster {
     constructor(nek){
 		this.category = "img";
 		
-		this.perms = ["AttachFiles"];
+		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
 		this.args = "<текст>";
 		this.advargs = "<текст> - содержарие строки";
 		this.argsdesc = this.advargs; // описание аргументов в помоще по конкретной команде

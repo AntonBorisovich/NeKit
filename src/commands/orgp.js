@@ -30,7 +30,7 @@ class Orgp {
 		this.category = "info"
 		
 		//задать полученые значения для дальнейшего использования в коде команды
-		this.perms = [];
+		this.perms = ["EMBED_LINKS"];
         this.name = "orgp"; // имя команды
 		this.desc = "питерский транспорт"; // описание команды в общем списке команд
 		this.advdesc = "Берёт информацию о маршрутах в Санкт-Петербурге со [старого сайта \"Портал Общественного Транспорта Санкт-Петербурга\"](https://transport.orgp.spb.ru/Portal/transport/main).\nФото и данные о машинах предоставляются сайтом [transphoto.org](https://transphoto.org).\n\nСделано специально для <@374144960221413386>"; // описание команды в помоще по конкретной команде
@@ -39,12 +39,12 @@ class Orgp {
 		this.advargs = "<тип> <номер>"; // аргументы в помоще по конкретной команде
     };
 
-    async run(nek, kitsune, msg, args){
+    run(nek, kitsune, msg, args){
 		// чекаем аргументы
 		let type = false
 		let route = false
 		args.shift()
-		for await (const arg of args) {  
+		for (const arg of args) {  
 			if (arg.toLowerCase().startsWith('тро') || arg.toLowerCase().startsWith('nhj')) { // троллейбус
 				type = "trolley";
 			} else if (arg.toLowerCase().startsWith('ав') || arg.toLowerCase().startsWith('fd')) { // автобус
@@ -323,7 +323,7 @@ class Orgp {
 			reqr.end();
 		};
 	};
-	async butt(kitsune, interaction, args){
+	butt(kitsune, interaction, args){
 		if (interaction.values[0]) {
 			get_stts_vehicle(kitsune, interaction, args, interaction.values[0].split("_"))
 		} else {

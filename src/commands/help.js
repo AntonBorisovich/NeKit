@@ -7,7 +7,7 @@ class Help {
 		this.category = "info"; // категория команд
 		this.hidden = false; // можно ли отображать команду в общем списке
 
-		this.perms = [];
+		this.perms = ["EMBED_LINKS"];
         this.name = "help"; // имя команды
 		this.desc = "список команд"; // описание команды в общем списке команд
 		this.advdesc = "Вывод полного перечня доступных для исполнения команд"; // описание команды в помоще по конкретной команде
@@ -18,8 +18,9 @@ class Help {
     }
 	
     run(nek, client, msg, args){
+		
 		if (args[1]) { // если нужна помощь по команде
-			this.commHelp(nek, msg, args[1])
+			this.commAdvHelp(nek, msg, args[1])
 			return;
 		}
 		
@@ -52,7 +53,7 @@ class Help {
 		msg.reply({ embeds: [embed] }); // отправить
     }
 	
-	commHelp(nek, msg, name){
+	commAdvHelp(nek, msg, name){	
 		const comm = nek.commands.get(name); // получаем команду из мапы
 		if (!comm) {
 			let embed = new Discord.EmbedBuilder() // составляем embed
@@ -61,11 +62,17 @@ class Help {
 			msg.reply({ embeds: [embed] }); // отправить
 			return;
 		}
-		let embed = new Discord.EmbedBuilder() // составляем embed
-			.setTitle('Команда ' + comm.name) // заголовок
-			.setColor(nek.config.basecolor) // цвет
-			.setDescription('Скоро...')
-		msg.reply({ embeds: [embed] }); // отправить
+		if (!comm.version) comm.version = 'too old (not stable)';
+		let embed = new Discord.EmbedBuilder()
+			.setTitle(comm.name + ' - ' + comm.desc)
+			.setColor(nek.config.basecolor)
+			.setDescription("**" + nek.config.prefix + comm.name + " " + comm.advargs +  "**" )
+			.addFields([{ name: "Описание:", value: comm.advdesc}])
+			.setFooter({text: 'Версия команды: ' + comm.version})
+		if (comm.advargs != "") {
+			embed.addFields([{ name:"Аргументы:", value: comm.argsdesc}]);
+		}
+		msg.reply({ embeds: [embed] });
 		return;
 	}
 }

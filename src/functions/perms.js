@@ -59,14 +59,17 @@ class Perms {
 	//
 	// ВХОД:
 	//  nek - nek
-	//  client - client
 	//  msg - msg или interaction
 	//  perms - массив пермишенов ( например: ["READ_MESSAGE_HISTORY", "EMBED_LINKS", "ATTACH_FILES"] )
 	//  > https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags 
 	// ВЫХОД:
 	//  Массив тех прав, которые отсутствуют в канале ( например: ["ATTACH_FILES", "EMBED_LINKS"] )
 	//
-    checkPerms(nek, client, msg, perms){ 
+    checkPerms(nek, msg, perms){
+		if (!msg.guild) { // если нету сервера, то нечего и проверять
+			return [false]; // возвращаем пустоту, ведь нет никаких отсутствующих прав
+		}
+
 		let permsBit = []; // задаём массив переведённых прав
 		for (let perm of perms) { // переводим каждое право для discord.js
 			permsBit.push(perm2bit[perm]);

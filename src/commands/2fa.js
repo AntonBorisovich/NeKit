@@ -11,7 +11,7 @@ class TwoFA {
 		
 		this.category = "utility"; // категория команд
 		this.hidden = true; // можно ли отображать команду в общем списке
-		this.perms = [];
+		this.perms = ["EMBED_LINKS"];
 		
         this.name = "2fa"; // имя команды
 		this.desc = "Настройка 2FA"; // описание команды в общем списке команд

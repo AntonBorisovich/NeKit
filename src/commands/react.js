@@ -1,10 +1,10 @@
 const Discord = require("discord.js")
 
 class React {
-    constructor(kitsune, config, commands, values){
+    constructor(nek){
 		this.category = "utility";
 		
-		this.perms = ["AddReactions"];
+		this.perms = ["EMBED_LINKS", "ADD_REACTIONS"];
 
 		this.name = "react"; // имя команды
 		this.desc = "реакция на сообщение";
@@ -14,12 +14,12 @@ class React {
 		this.advargs = "<эмодзи> <id>";
     }
 
-    async run(nek){
+    async run(nek, client, msg, args){
 		try {
 			let msgrep = false
 			if (!args[1]){ // если эмодзи не указан
 				let embed = new Discord.EmbedBuilder()
-				embed.setTitle(kitsune.user.username + ' - Error')
+				embed.setTitle(client.user.username + ' - Error')
 				embed.setColor(`#F00000`)
 				embed.setDescription("А что ставить то? Укажи эмодзи.")
 				msg.channel.send({ embeds: [embed] });
@@ -30,7 +30,7 @@ class React {
 			if (msg.guild.members.me.permissionsIn(msg.channel).has([Discord.PermissionsBitField.Flags.ReadMessageHistory]) && msg.type == "19" && msg.reference) { // если есть ответ (reply) то проверить права
 				msgrep = await msg.fetchReference(); // попробовать достать исходное сообщение
 				if (msgrep) { // если удалось, то работать с ним
-					await work(kitsune, msgrep, msg, args);
+					await work(client, msgrep, msg, args);
 					return
 				} 
 			};
@@ -38,19 +38,19 @@ class React {
 			if (args[2]) { // если указан id то попробовать найти его
 				msgrep = await msg.channel.messages.fetch(args[2].toString()); // попробовать найти сообщение
 				if (msgrep) { // если удалось, то работать с ним
-					await work(kitsune, msgrep, msg, args);
+					await work(client, msgrep, msg, args);
 					return
 				} 
 			};
 			if (!msgrep) {
 				let embed = new Discord.EmbedBuilder()
-				embed.setTitle(kitsune.user.username + ' - error')
+				embed.setTitle(client.user.username + ' - error')
 				embed.setColor(`#F00000`)
 				embed.setDescription("Не удалось поставить реакцию. Возможно, у бота нету прав на это сообщение или сообщения не существует. А ну или вы просто не указали сообщение")
 				msg.channel.send({ embeds: [embed] });
 			};
 			
-			async function work(kitsune, msg, origmsg, args) { // работать
+			async function work(client, msg, origmsg, args) { // работать
 				try {
 					let reactsend = false
 					if (args[1].replaceAll(/\p{Emoji}/ug, '') == '') { // если это просто эмодзи
@@ -67,7 +67,7 @@ class React {
 						} else {
 							//console.log(err)
 							let embed = new Discord.EmbedBuilder()
-							embed.setTitle(kitsune.user.username + ' - error')
+							embed.setTitle(client.user.username + ' - error')
 							embed.setColor(`#F00000`)
 							embed.setDescription("Не удалось найти этот эмодзи.")
 							msg.channel.send({ embeds: [embed] });
@@ -85,7 +85,7 @@ class React {
 						} else {
 							console.log(err)
 							let embed = new Discord.EmbedBuilder()
-							embed.setTitle(kitsune.user.username + ' - error')
+							embed.setTitle(client.user.username + ' - error')
 							embed.setColor(`#F00000`)
 							embed.setDescription("Не удалось найти этот эмодзи.")
 							msg.channel.send({ embeds: [embed] });
@@ -99,7 +99,7 @@ class React {
 							reactsend = true;
 						} else { // неа, ниче не нашлось
 							let embed = new Discord.EmbedBuilder()
-							embed.setTitle(kitsune.user.username + ' - error')
+							embed.setTitle(client.user.username + ' - error')
 							embed.setColor(`#F00000`)
 							embed.setDescription("Не удалось найти этот эмодзи.")
 							msg.channel.send({ embeds: [embed] });
@@ -112,7 +112,7 @@ class React {
 				} catch(err) {
 					console.log(err)
 					let embed = new Discord.EmbedBuilder()
-					embed.setTitle(kitsune.user.username + ' - error')
+					embed.setTitle(client.user.username + ' - error')
 					embed.setColor(`#F00000`)
 					embed.setDescription("Не удалось поставить реакцию. Возможно, вы не указали реакцию или указали её не правильно.")
 					msg.channel.send({ embeds: [embed] });
@@ -122,7 +122,7 @@ class React {
 		} catch(err) {
 			console.log(err)
 			let embed = new Discord.EmbedBuilder()
-			embed.setTitle(kitsune.user.username + ' - error')
+			embed.setTitle(client.user.username + ' - error')
 			embed.setColor(`#F00000`)
 			embed.setDescription("Не удалось поставить реакцию. Возможно, у бота нету прав на это сообщение или сообщения не существует.")
 			msg.channel.send({ embeds: [embed] });

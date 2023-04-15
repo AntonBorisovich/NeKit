@@ -3,10 +3,10 @@ const https = require("https");
 
 class waifu {
     constructor(nek){
-		this.perms = [];
+		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
 		this.category = "img";
 		this.args = "<тег>";
-		this.advargs = "```\n" +
+		this.argsdesc = "```\n" +
 		"-= SFW =- | -= NSFW =-\n"+
 		"waifu     | waifu_NSFW\n"+
 		"neko      | neko_NSFW\n"+
@@ -41,7 +41,7 @@ class waifu {
 		"cringe    | \n"+
 		"-= SFW =- | -= NSFW =-\n"+
 		"```"
-		this.usage = "<тег>";
+		this.advargs = "<тег>";
         this.desc = "кидает пикчи с waifu.pics";
         this.advdesc = "Отправляет пикчи по тегу с сайта Waifu.pics, в том числе и NSFW";
         this.name = "waifu";

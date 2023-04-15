@@ -55,7 +55,7 @@ class Look {
     constructor(nek){
 		this.category = "img";
 		//this.twofa = false; // запуск только разработчикам
-		this.perms = ["ATTACH_FILES"];
+		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
         this.name = "look"; // имя команды
 		this.desc = "2 чела показывают на пикчу"; // описание команды в общем списке команд
 		this.advdesc = "Делает мем, где 2 нарисованых чела показывают на картинку\nПодробнее: [knowyourmeme.com](https://knowyourmeme.com/memes/two-soyjaks-pointing)"; // описание команды в помоще по конкретной команде

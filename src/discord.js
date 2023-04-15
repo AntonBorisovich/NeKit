@@ -10,7 +10,7 @@ const client = new Discord.Client({
 });
 
 let works = new Map(); // мапа, где хрянятся все команды, которые всё ещё обрабатываются
-let shuttingDown = false; // если true, то новые команды не будут исполнятся
+let ignoreNewMsg = false; // если true, то новые команды не будут исполнятся
 
 class discord {
     constructor(nek){
@@ -27,7 +27,7 @@ class discord {
 		nek.reconnect = () => { // функция переподключения
 			nek.log('DISCORD', 'Reconnecting...', 'cyan')
 			if (works.size !== 0) { // если никто не юзает бота сейчас
-				shuttingDown = true; // запрещаем обращаться к боту
+				ignoreNewMsg = true; // запрещаем обращаться к боту
 				client.user.setStatus('idle'); // статус не на месте
 				client.user.setActivity('Переподключаюсь...'); // играет в Переподключаюсь...
 				nek.log('DISCORD', 'Someone is using bot right now. Trying again in 5 seconds...', 'cyan')
@@ -43,7 +43,7 @@ class discord {
 			client.login(nek.config["token_" + this.name]); // входим
 			nek.simplelog('OK!', 'green')
 			setTimeout(() => { // задаем статусы через 10 секунд ибо discord moment
-				shuttingDown = false; // разрешаем обращаться к боту
+				ignoreNewMsg = false; // разрешаем обращаться к боту
 				client.user.setStatus('online'); // статус невидимки
 				client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
 			}, 10000);
@@ -77,7 +77,7 @@ class discord {
 		
 		// СООБЩЕНИЯ
 		async function messageHandler(msg){
-			if (shuttingDown) return; // если мы вырубаемся, то игнорим всех
+			if (ignoreNewMsg) return; // если мы вырубаемся, то игнорим всех
 			if (msg.author.bot) return; // игнор бота
 			msg.content = msg.content.trim(); // очистка лишних пробелов
 			
@@ -87,7 +87,7 @@ class discord {
 
 			const args = msg.content.split(" "); // разделяем всё сообщение на слова
 			const commName = args[0].slice(nek.config.prefix.length); // Отделяем префикс от названия команды
-			const comm = nek.commands.get(commName); // получаем команду из мапы
+			let comm = nek.commands.get(commName); // получаем команду из мапы
 			
 			if (!comm) { // если команда не найдена
 				// let embed = new Discord.EmbedBuilder() // составляем embed
@@ -98,31 +98,53 @@ class discord {
 				return;
 			}
 			
-			if (msg.channel.type !== "DM" && msg.channel.type !== "GroupDM") { // если не личка, то проверить права
-				const permsFunc = nek.functions.get("perms");
-				const failPerms = permsFunc.checkPerms(nek, client, msg, ["SEND_MESSAGES", ...comm.perms]);
-				if (failPerms[0]) { // если есть хоть одно отсутствующее право то стоп-кран
-					nek.log('MESSAGE', 'Missing permission(s) [' + failPerms.join(', ') + '] for "' + comm.name + '" (' + msg.id + ')', 'gray')
-					if (!permsFunc.checkPerms(nek, client, msg, ["SEND_MESSAGES", "EMBED_LINKS"])[0]) { // если можно печатать с эмбедами, то отправить ошибку эмбедом
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('Нету нужных прав')
-							.setColor(nek.config.errorcolor)
-							.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\n[Что значат эти буквы?](https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags)')
-						msg.reply({ embeds: [embed] });
-						return;
-					} else if (!permsFunc.checkPerms(nek, client, msg, ["SEND_MESSAGES"])[0]) { // если вообще можно печатать, то отправить ошибку текстом
-						msg.reply({content: '**ОШИБКА:**\nДля работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\nЧто значат эти буквы?: https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags'})
-						return;
-					} else { // если нельзя печатать, то отправить ошибку в лс
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('Нету нужных прав')
-							.setColor(nek.config.errorcolor)
-							.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\nСообщите об этом владельцу сервера!')
-						msg.author.send({ embeds: [embed] });
-						return;
-					}
+			const startTime = Date.now();
+			const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав
+			
+			if (args[args.length-1].toLowerCase() === "--help") { // если последний аргумент --help
+				if (!permsFunc.checkPerms(nek, msg, ["SEND_MESSAGES", "EMBED_LINKS"])[0]) { // если можно отправить сообщение
+					const helpComm = nek.commands.get("help");
+					nek.log('MESSAGE', 'Executed  "' + helpComm.name + '" (' + msg.id + ')', 'gray');
+					helpComm.commAdvHelp(nek, msg, comm.name);
+					nek.log('MESSAGE', 'Done with "' + helpComm.name + '" (' + msg.id + ')', 'gray');
+					return;
+				} else {
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('Нету нужных прав')
+						.setColor(nek.config.errorcolor)
+						.setDescription('Для вывода помощи по команде нужны права `SEND_MESSAGES, EMBED_LINKS`.\nСообщите об этом владельцу сервера!')
+					msg.author.send({ embeds: [embed] });
 					return;
 				}
+			}
+			
+			// проверка прав команды
+			let SendMsgPerm = "SEND_MESSAGES";
+			if (msg.channel.type === Discord.ChannelType.GuildForum || msg.channel.type === Discord.ChannelType.GuildPublicThread || msg.channel.type === Discord.ChannelType.GuildPrivateThread) {
+				SendMsgPerm = "SEND_MESSAGES_IN_THREADS"; // если сообщение в ветке, то проверять можно ли отправлять сообщение в ветках
+			}
+			const failPerms = permsFunc.checkPerms(nek, msg, [SendMsgPerm, ...comm.perms]);
+			if (failPerms[0]) { // если есть хоть одно отсутствующее право то стоп-кран
+				nek.log('MESSAGE', 'Missing permission(s) [' + failPerms.join(', ') + '] for "' + comm.name + '" (' + msg.id + ')', 'gray')
+				if (!permsFunc.checkPerms(nek, msg, [SendMsgPerm, "EMBED_LINKS"])[0]) { // если можно печатать с эмбедами, то отправить ошибку эмбедом
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('Нету нужных прав')
+						.setColor(nek.config.errorcolor)
+						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\n[Что значат эти буквы?](https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags)')
+					msg.reply({ embeds: [embed] });
+					return;
+				} else if (!permsFunc.checkPerms(nek, msg, [SendMsgPerm])[0]) { // если вообще можно печатать, то отправить ошибку текстом
+					msg.reply({content: '**ОШИБКА:**\nДля работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\nЧто значат эти буквы?: https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags'});
+					return;
+				} else { // если нельзя печатать, то отправить ошибку в лс
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('Нету нужных прав')
+						.setColor(nek.config.errorcolor)
+						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + failPerms.join(', ') + '`\nСообщите об этом владельцу сервера!')
+					msg.author.send({ embeds: [embed] });
+					return;
+				}
+				return;
 			}
 			
 			if (comm.TWOFA) { // если для запуска нужна двухфакторка
@@ -157,12 +179,12 @@ class discord {
 				}
 				args.pop() // удаляем код 2FA из аргументов после успешной проверки
 			}
-
-			works.set(msg.id, comm.name) // запоминаем, что мы начали работу над этой командой
+			
+			works.set(msg.id, {name: comm.name, timestamp: startTime}) // запоминаем, что мы начали работу над этой командой
 			nek.log('MESSAGE', 'Executed  "' + comm.name + '" (' + msg.id + ')', 'gray');
 			await comm.run(nek, client, msg, args); // запускаем команду
 			works.delete(msg.id); // удаляем, т.к. мы закончили работу
-			nek.log('MESSAGE', 'Done with "' + comm.name + '" (' + msg.id + ')', 'gray');
+			nek.log('MESSAGE', 'Done with "' + comm.name + '" (' + msg.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
 		}
 		client.on(Discord.Events.MessageCreate, async (msg) => { // если новое сообщение в чате
 			messageHandler(msg); // обработать

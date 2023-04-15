@@ -4,7 +4,7 @@ const pet = require('pet-pet-gif');
 class Pat {
     constructor(nek){
 		
-		this.perms = [];
+		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
 		this.category = "fun";
 		this.args = "";
 		this.usage = "<юзер>";
