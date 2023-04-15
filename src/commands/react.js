@@ -1,11 +1,11 @@
-const Discord = require("discord.js")
+const Discord = require("discord.js");
 
 class React {
     constructor(nek){
+		
 		this.category = "utility";
 		
 		this.perms = ["EMBED_LINKS", "ADD_REACTIONS"];
-
 		this.name = "react"; // имя команды
 		this.desc = "реакция на сообщение";
 		this.argsdesc = "Выбрать сообщение можно ответив на него или указав <id> сообщения\nВ поле <эмодзи> обязательно должен быть эмодзи в любом представленном виде, т.е. или `:flushed:` или `😳` или `sus (как название серверного эмодзи)`.";
@@ -19,11 +19,11 @@ class React {
 			let msgrep = false
 			if (!args[1]){ // если эмодзи не указан
 				let embed = new Discord.EmbedBuilder()
-				embed.setTitle(client.user.username + ' - Error')
-				embed.setColor(`#F00000`)
-				embed.setDescription("А что ставить то? Укажи эмодзи.")
-				msg.channel.send({ embeds: [embed] });
-				return
+					.setTitle(client.user.username + ' - Error')
+					.setColor(`#F00000`)
+					.setDescription("А что ставить то? Укажи эмодзи.")
+				msg.reply({ embeds: [embed] });
+				return;
 			};
 			
 			// ищем референс
@@ -31,7 +31,7 @@ class React {
 				msgrep = await msg.fetchReference(); // попробовать достать исходное сообщение
 				if (msgrep) { // если удалось, то работать с ним
 					await work(client, msgrep, msg, args);
-					return
+					return;
 				} 
 			};
 			
@@ -39,15 +39,15 @@ class React {
 				msgrep = await msg.channel.messages.fetch(args[2].toString()); // попробовать найти сообщение
 				if (msgrep) { // если удалось, то работать с ним
 					await work(client, msgrep, msg, args);
-					return
+					return;
 				} 
 			};
 			if (!msgrep) {
 				let embed = new Discord.EmbedBuilder()
-				embed.setTitle(client.user.username + ' - error')
-				embed.setColor(`#F00000`)
-				embed.setDescription("Не удалось поставить реакцию. Возможно, у бота нету прав на это сообщение или сообщения не существует. А ну или вы просто не указали сообщение")
-				msg.channel.send({ embeds: [embed] });
+					.setTitle(client.user.username + ' - error')
+					.setColor(`#F00000`)
+					.setDescription("Не удалось поставить реакцию. Возможно, у бота нету прав на это сообщение или сообщения не существует. А ну или вы просто не указали сообщение")
+				msg.reply({ embeds: [embed] });
 			};
 			
 			async function work(client, msg, origmsg, args) { // работать
@@ -70,7 +70,7 @@ class React {
 							embed.setTitle(client.user.username + ' - error')
 							embed.setColor(`#F00000`)
 							embed.setDescription("Не удалось найти этот эмодзи.")
-							msg.channel.send({ embeds: [embed] });
+							msg.reply({ embeds: [embed] });
 							return;
 						};
 					};
@@ -88,7 +88,7 @@ class React {
 							embed.setTitle(client.user.username + ' - error')
 							embed.setColor(`#F00000`)
 							embed.setDescription("Не удалось найти этот эмодзи.")
-							msg.channel.send({ embeds: [embed] });
+							msg.reply({ embeds: [embed] });
 							return;
 						};
 					};
@@ -102,7 +102,7 @@ class React {
 							embed.setTitle(client.user.username + ' - error')
 							embed.setColor(`#F00000`)
 							embed.setDescription("Не удалось найти этот эмодзи.")
-							msg.channel.send({ embeds: [embed] });
+							msg.reply({ embeds: [embed] });
 							return;
 						};
 					};
@@ -115,7 +115,7 @@ class React {
 					embed.setTitle(client.user.username + ' - error')
 					embed.setColor(`#F00000`)
 					embed.setDescription("Не удалось поставить реакцию. Возможно, вы не указали реакцию или указали её не правильно.")
-					msg.channel.send({ embeds: [embed] });
+					msg.reply({ embeds: [embed] });
 				}
 			}
 			
@@ -125,10 +125,10 @@ class React {
 			embed.setTitle(client.user.username + ' - error')
 			embed.setColor(`#F00000`)
 			embed.setDescription("Не удалось поставить реакцию. Возможно, у бота нету прав на это сообщение или сообщения не существует.")
-			msg.channel.send({ embeds: [embed] });
+			msg.reply({ embeds: [embed] });
 		}
     }
 }
 
-module.exports = React
+module.exports = React;
 

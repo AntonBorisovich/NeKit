@@ -1,6 +1,5 @@
 const Discord = require("discord.js");
 const { createCanvas, loadImage } = require('canvas');
-//const bg = '././assets/demotiv/demotivator.png'
 
 const demotivatorImage = async (imgurl, title, subtitle, width, height) => {
   if (width > 850) {
@@ -33,10 +32,8 @@ const demotivatorImage = async (imgurl, title, subtitle, width, height) => {
 class Dem {
     constructor(nek){
 		this.version = "1.0";
-		
-		//задать полученые значения для дальнейшего использования в коде команды
+
 		this.category = "img";
-		//this.twofa = false; // запуск только разработчикам
 		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
         this.name = "dem"; // имя команды
 		this.desc = "сделать демотиватор"; // описание команды в общем списке команд
@@ -49,6 +46,15 @@ class Dem {
     async run(nek, client, msg, args){
 		const getAttachFunc = nek.functions.get('getAttach');
 		const attachment = await getAttachFunc.getAttach(nek, msg, 'any', 'image', 10, true); // любым методом / получить картинку / смотреть последние 10 сообщений / нужно первое найденное
+		if (!attachment[0]) {
+			let embed = new Discord.EmbedBuilder()
+			.setTitle('Агде')
+			.setColor(nek.config.errorcolor)
+			.setDescription("Изображение не найдено. Попробуй прикрепить его или ответить на сообщение, где оно есть")
+			msg.reply({ embeds: [embed] });
+			return;
+		}
+
 		let wide_multiplier = 1;
 		if (args[1]) {
 			if (args[1].toLowerCase() == "-w") {

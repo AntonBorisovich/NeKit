@@ -1,9 +1,7 @@
 class Settings {
     constructor(nek){
 		this.version = "dev";
-		
 		this.category = "utility"; // категория команд
-		this.hidden = false; // можно ли отображать команду в общем списке
 		
 		this.perms = ["EMBED_LINKS"];
         this.name = "settings"; // имя команды

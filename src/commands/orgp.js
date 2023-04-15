@@ -1,7 +1,7 @@
 const Discord = require("discord.js");
 const request = require("request");
 const https = require("https");
-const numco = require("numco")
+const numco = require("numco");
 const os = require('os'); // получение данных о системе для генерации useragent
 
 const bbox = "754522.5047236,6680543.9238783,5904162.1488232,10277276.671411" // в каком четырёхугольнике искать машины на карте

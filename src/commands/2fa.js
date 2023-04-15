@@ -4,7 +4,7 @@ let tempSecret2FA = false;
 
 class TwoFA {
     constructor(nek){
-		this.version = 'dev'
+		this.version = '1.0'
 		//задать полученые значения для дальнейшего использования в коде команды
 		//this.nek = nek;
         //this.config = config;

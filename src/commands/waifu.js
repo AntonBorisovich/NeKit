@@ -1,10 +1,11 @@
-const Discord = require("discord.js")
+const Discord = require("discord.js");
 const https = require("https");
 
-class waifu {
+class Waifu {
     constructor(nek){
-		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
 		this.category = "img";
+
+		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
 		this.args = "<тег>";
 		this.argsdesc = "```\n" +
 		"-= SFW =- | -= NSFW =-\n"+
@@ -132,5 +133,5 @@ class waifu {
 	}
 }
 
-module.exports = waifu
+module.exports = Waifu;
 

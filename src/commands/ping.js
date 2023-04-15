@@ -4,12 +4,12 @@ class Ping {
     constructor(nek){
 		//задать полученые значения для дальнейшего использования в коде команды
 		this.version = "v1";
-		
-		this.perms = ["EMBED_LINKS"];
 		this.category = "utility";
+		this.perms = ["EMBED_LINKS"];
+		
 		this.args = "";
 		this.advargs = "";
-		this.usage = "";
+		this.argsdesc = "";
         this.desc = "пинг бота";
         this.advdesc = "Проверка соединения бота с дискордами (пинг)";
         this.name = "ping";

@@ -1,9 +1,9 @@
-const Discord = require("discord.js")
+const Discord = require("discord.js");
 
 class coinflip {
     constructor(nek){
 		
-		this.version = "v1"
+		this.version = "1.0";
 		
 		this.perms = ["EMBED_LINKS"];
 		this.category = "fun";
@@ -20,27 +20,30 @@ class coinflip {
 		if (random > 500) {
 			if (random > 1000) {
 				let embed = new Discord.EmbedBuilder()
-				embed.setTitle('Монетка')
-				embed.setColor(nek.config.basecolor)
-				embed.setDescription("Ребро! :last_quarter_moon:")
+					.setTitle('Монетка')
+					.setColor(nek.config.basecolor)
+					.setDescription("Ребро! :last_quarter_moon:")
 				msg.reply({ embeds: [embed] });
+				return;
 			} else {
 				let embed = new Discord.EmbedBuilder()
-				embed.setTitle('Монетка')
-				embed.setColor(nek.config.basecolor)
-				embed.setDescription("Решка! :new_moon:")
+					.setTitle('Монетка')
+					.setColor(nek.config.basecolor)
+					.setDescription("Решка! :new_moon:")
 				msg.reply({ embeds: [embed] });
+				return;
 			}
 		} else {
 			let embed = new Discord.EmbedBuilder()
-			embed.setTitle('Монетка')
-			embed.setColor(nek.config.basecolor)
-			embed.setDescription("Орел! :full_moon:")
+				.setTitle('Монетка')
+				.setColor(nek.config.basecolor)
+				.setDescription("Орел! :full_moon:")
 			msg.reply({ embeds: [embed] });
+			return;
 		}
 
     }
 }
 
-module.exports = coinflip
+module.exports = coinflip;
 

@@ -1,11 +1,8 @@
 const Discord = require("discord.js");
 class Help {
     constructor(nek){
-		this.version = "dev";
-		
-		//задать полученые значения для дальнейшего использования в коде команды
+		this.version = "1.0";
 		this.category = "info"; // категория команд
-		this.hidden = false; // можно ли отображать команду в общем списке
 
 		this.perms = ["EMBED_LINKS"];
         this.name = "help"; // имя команды
@@ -18,9 +15,8 @@ class Help {
     }
 	
     run(nek, client, msg, args){
-		
 		if (args[1]) { // если нужна помощь по команде
-			this.commAdvHelp(nek, msg, args[1])
+			this.commAdvHelp(nek, msg, args[1]);
 			return;
 		}
 		
@@ -46,10 +42,10 @@ class Help {
 				embed.addFields({ // добавляем field
 					name: "**" + cat + "**", // название категории
 					value: cmds[cat].join(', ') // команды в категории через запятую
-				})
+				});
 			}
 		}
-		embed.setFooter({text: 'Команды, которые могут работать нестабильно, скрыты за спойлером'})
+		embed.setFooter({text: 'Команды, которые могут работать нестабильно, скрыты за спойлером'});
 		msg.reply({ embeds: [embed] }); // отправить
     }
 	

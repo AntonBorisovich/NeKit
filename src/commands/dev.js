@@ -19,7 +19,7 @@ class Dev {
 
     run(nek, client, msg, args){
 		if (!args[1]) {
-			msg.reply({content: 'агде'})
+			msg.reply({content: 'агде'});
 			return;
 		}
 		if (args[1] === 'reloadfunc') {
@@ -39,8 +39,8 @@ class Dev {
 				}
 				
 				// если указаны аргументы, то преобразовать их в массив и перезагрузить каждую
-				args.shift() // режем первое знач. массива
-				args.shift() // режем второе знач. массива
+				args.shift(); // режем первое знач. массива
+				args.shift(); // режем второе знач. массива
 				for (const func of args ) { // чекаем каждую команду в мапе
 					const reloadResult = reloadFunc.reload(nek, func.toLowerCase(), 'functions'); // перезагружаем команду
 					outputString += func.toLowerCase() + " - " + reloadResult + "\n"; // пишем будущий лог
@@ -68,8 +68,8 @@ class Dev {
 				}
 				
 				// если указаны аргументы, то преобразовать их в массив и перезагрузить каждую
-				args.shift() // режем первое знач. массива
-				args.shift() // режем второе знач. массива
+				args.shift(); // режем первое знач. массива
+				args.shift(); // режем второе знач. массива
 				for (const comm of args ) { // чекаем каждую команду в мапе
 					const reloadResult = reloadFunc.reload(nek, comm.toLowerCase(), 'commands'); // перезагружаем команду
 					outputString += comm.toLowerCase() + " - " + reloadResult + "\n"; // пишем будущий лог
@@ -112,10 +112,10 @@ class Dev {
 				.setColor(nek.config.errorcolor) // цвет
 				.setDescription('Неизвестная операция')
 			msg.reply({ embeds: [embed] }); // отправить
+			return;
 		}
 	}
-	
 }
 
-module.exports = Dev
+module.exports = Dev;
 

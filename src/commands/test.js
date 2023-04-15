@@ -2,8 +2,7 @@ const Discord = require("discord.js");
 
 class Test {
     constructor(nek){
-		this.version = "version";		
-		
+		this.version = "version";
 		this.category = "test"; // категория команд
 		this.hidden = true; // можно ли отображать команду в общем списке
 		
@@ -23,7 +22,6 @@ class Test {
 		msg.reply({ embeds: [embed] }); // отправить
 		return;
 	}
-	
 }
 
 module.exports = Test;

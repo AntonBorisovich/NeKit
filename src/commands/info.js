@@ -27,15 +27,15 @@ class Info {
 			nek.config.developers.forEach(id => {
 				devstring += '<@' + id + '>, ';
 			});
-			devstring = devstring.substring(0, devstring.length - 2)
+			devstring = devstring.substring(0, devstring.length - 2);
 
 			let thxstring = ""
 			nek.config.thanks.forEach(id => {
 				thxstring += '<@' + id + '>, ';
 			});
-			thxstring = thxstring.substring(0, thxstring.length - 2)
+			thxstring = thxstring.substring(0, thxstring.length - 2);
 
-			embed.setDescription(nek.config.info + '\n\nРазработчики: ' + devstring + '\nБлагодарности: ' + thxstring)
+			embed.setDescription(nek.config.info + '\n\nРазработчики: ' + devstring + '\nБлагодарности: ' + thxstring);
 
 			msg.reply({ embeds: [embed] });
 			return;
@@ -43,38 +43,30 @@ class Info {
 		
 		function debuginfo(){
 			let embed = new Discord.EmbedBuilder()
-			embed.setTitle('Дебаг инфа о боте')
-			embed.setColor(nek.basecolor)
-			embed.setDescription('пока тут много чего нету, ибо делаю')
-				
-			embed.addFields({
-				name: 'Версии',
-				value: '```\n' +
-				'Node.js®: ' + process.version + '\n' +
-				'Discord.js: ' + Discord.version + '\n' +
-				'Загрузчик ' + nek.name + ': ' + nek.version + '\n' +
-				
-				
-				
-				'```'
-			})
-			embed.addFields({
-				name: 'Система',
-				value: '```\n' +
-				'platform: ' + os.platform() + '\n' +
-				'Используемая ОЗУ: ' + Math.round(process.memoryUsage().rss / 1048576) + ' МБ\n' +
-				
-				
-				'```'
-			})
-			embed.addFields({
-				name: 'Discord',
-				value: '```\n' +
-				'Кол-во серверов: ' + client.guilds.cache.size + '\n' +
-				
-				
-				'```'
-			})
+				.setTitle('Дебаг инфа о боте')
+				.setColor(nek.basecolor)
+				.setDescription('пока тут много чего нету, ибо делаю')
+				.addFields({
+					name: 'Версии',
+					value: '```\n' +
+					'Node.js®: ' + process.version + '\n' +
+					'Discord.js: ' + Discord.version + '\n' +
+					'Загрузчик ' + nek.name + ': ' + nek.version + '\n' +
+					'```'
+				})
+				.addFields({
+					name: 'Система',
+					value: '```\n' +
+					'platform: ' + os.platform() + '\n' +
+					'Используемая ОЗУ: ' + Math.round(process.memoryUsage().rss / 1048576) + ' МБ\n' +
+					'```'
+				})
+				.addFields({
+					name: 'Discord',
+					value: '```\n' +
+					'Кол-во серверов: ' + client.guilds.cache.size + '\n' +
+					'```'
+				})
 			msg.reply({ embeds: [embed] });
 			return;
 		}
@@ -89,5 +81,5 @@ class Info {
 	
 }
 
-module.exports = Info
+module.exports = Info;
 
