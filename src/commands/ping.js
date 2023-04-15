@@ -3,7 +3,7 @@ const Discord = require("discord.js");
 class Ping {
     constructor(nek){
 		//задать полученые значения для дальнейшего использования в коде команды
-		this.version = "v1";
+		this.version = "1.0";
 		this.category = "utility";
 		this.perms = ["EMBED_LINKS"];
 		
