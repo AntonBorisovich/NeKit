@@ -44,8 +44,10 @@ class discord {
 			nek.simplelog('OK!', 'green')
 			setTimeout(() => { // задаем статусы через 10 секунд ибо discord moment
 				ignoreNewMsg = false; // разрешаем обращаться к боту
-				client.user.setStatus('online'); // статус невидимки
-				client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
+				if (!nek.config.noActivity) {
+					client.user.setStatus('online'); // статус невидимки
+					client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
+				}
 			}, 10000);
 			return;
 		}
@@ -64,8 +66,10 @@ class discord {
 		client.once(Discord.Events.ClientReady, async () => { // когда залогинились
 			nek.log("DISCORD", "Logged in as " + client.user.tag, "cyan"); // логируем что залогинились
 			nek.log("READY", `Total launch time: ${((Date.now() - nek.launch_time) / 1000 )}s`);
-			client.user.setStatus('online'); // статус невидимки
-			client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
+			if (!nek.config.noActivity) {
+				client.user.setStatus('online'); // статус невидимки
+				client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
+			}
 			let embed = new Discord.EmbedBuilder() // составляем embed
 				.setTitle('Logged in')
 				.setColor(nek.config.basecolor)
@@ -198,7 +202,7 @@ class discord {
 		// КНОПКИ, СПИСКИ, СЛЭШ-КОМАНДЫ
 		client.on(Discord.Events.InteractionCreate, async (interaction) => {
 				nek.log('INTERACTION', 'Got interaction. Interactions not supported now', 'gray');
-				interaction.reply({ content: 'Интерактивные элементы (кнопки, списки) пока не работают!', ephemeral: true});
+				//interaction.reply({ content: 'Интерактивные элементы (кнопки, списки) пока не работают!', ephemeral: true});
 				return;
 				
 				if (interaction.isChatInputCommand()) {

@@ -45,6 +45,10 @@ class Help {
 				});
 			}
 		}
+		embed.addFields({
+			name: 'А что это за команды?',
+			value: 'Вы можете узнать подробности о команде используя `' + nek.config.prefix + this.name + ' <команда>` или `' + nek.config.prefix + '<команда> --help`'
+		});
 		embed.setFooter({text: 'Команды, которые могут работать нестабильно, скрыты за спойлером'});
 		msg.reply({ embeds: [embed] }); // отправить
     }

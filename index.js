@@ -201,6 +201,11 @@ if (args[0]) { // если есть хоть какой-нибудь аргум�
 			nek.log('ARGUMENT', 'Forcing not to send errors in dm', 'cyan');
 			break;
 		}
+		if (arg.startsWith('--noActivity')) { // не пытаться отправлять ошибки в лс
+			nek.config.noActivity = true;
+			nek.log('ARGUMENT', 'Forcing not to set discord status and activity', 'cyan');
+			break;
+		}
 	}
 }
 
@@ -255,7 +260,7 @@ nek.Update2FASecret = (secret) => { // проверка 2FA кода
 	const file = require(fileName); // читаем json
 	file.Secret2FA = secret; // добавляем/изменяем секрет
 	try {
-		fs.writeFile(fileName, JSON.stringify(file), (err) => { // пишем новый файл
+		fs.writeFile(fileName, JSON.stringify(file, null, '\t'), (err) => { // пишем новый файл
 			if (err) throw(err);
 		});
 		nek.config.Secret2FA = secret

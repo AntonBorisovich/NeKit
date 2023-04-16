@@ -1,35 +1,21 @@
 const Discord = require("discord.js");
-const request = require("request");
 const https = require("https");
 const numco = require("numco");
 const os = require('os'); // получение данных о системе для генерации useragent
 
 const bbox = "754522.5047236,6680543.9238783,5904162.1488232,10277276.671411" // в каком четырёхугольнике искать машины на карте
 
-// кэш
-let cache_cookie = false
-let cache_scope = false
-let cache_routes = false
-
 // для нормального отображения типа транспорта
 let readableType = []
-readableType['trolley'] = "Троллейбус"
-readableType['bus'] = "Автобус"
-readableType['tram'] = "Трамвай"
+readableType['trolley'] = "Троллейбус";
+readableType['bus'] = "Автобус";
+readableType['tram'] = "Трамвай";
 
-// типо браузер
-let useragent = "Mozilla/5.0 (X11; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0" // defualt agent
-if (os.platform().startsWith('win')){
-	useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
-} else if (os.platform().startsWith('linux')) {
-	useragent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/108.0.0.0 Safari/537.36"
-}
 class Orgp {
 	constructor(nek){
 		
 		this.category = "info"
 		
-		//задать полученые значения для дальнейшего использования в коде команды
 		this.perms = ["EMBED_LINKS"];
         this.name = "orgp"; // имя команды
 		this.desc = "питерский транспорт"; // описание команды в общем списке команд
@@ -39,12 +25,11 @@ class Orgp {
 		this.advargs = "<тип> <номер>"; // аргументы в помоще по конкретной команде
     };
 
-    run(nek, kitsune, msg, args){
-		// чекаем аргументы
-		let type = false
-		let route = false
-		args.shift()
-		for (const arg of args) {  
+    async run(nek, kitsune, msg, args){
+		args.shift(); // режем первый аргумент т.к. это название команды
+		let type = false;
+		let routeName = false;
+		for await (const arg of args) {  
 			if (arg.toLowerCase().startsWith('тро') || arg.toLowerCase().startsWith('nhj')) { // троллейбус
 				type = "trolley";
 			} else if (arg.toLowerCase().startsWith('ав') || arg.toLowerCase().startsWith('fd')) { // автобус
@@ -52,120 +37,122 @@ class Orgp {
 			} else if (arg.toLowerCase().startsWith('тра') || arg.toLowerCase().startsWith('nhf')) { // трамвай
 				type = "tram";
 			} else { // предположительно номер маршрута
-				route = arg.toLowerCase();
-			};
-		};
-		
-		// проверка наличия маршрута
-		if (!route) {
+				routeName = arg.toLowerCase();
+			}
+		}
+
+		if (!routeName) { // если ничего не нашли
 			let embed = new Discord.EmbedBuilder()
-			embed.setTitle(kitsune.user.username + ' - orgp')
-			embed.setColor(`#F00000`)
-			embed.setDescription("Ты не указал маршрут!")
+			.setTitle('А че искать?')
+			.setColor(nek.config.errorcolor)
+			.setDescription('Укажите хотя бы номер маршрута')
 			msg.reply({ embeds: [embed] });
 			return;
 		}
 		
-		// проверка наличия кэша
-		if (!cache_routes) {
-			update_routes(kitsune, msg, args)
-		} else {
-			//console.log('found routes in cache')
-			search_routes(kitsune, msg, args, type, route)
-		}
-
-		function search_routes(kitsune, msg, args, type, route) { // поиск по маршруту в кэше
-			if (type) { // если указан тип
-				if (cache_routes[type+route]) { // если маршрут существует
-					get_cock(kitsune, msg, args, cache_routes[type+route].id, route.toUpperCase(), readableType[type]) // начать копать информацию о маршруте с сайта
-					return;
-				} else { // если не существует то шашипка
-					let embed = new Discord.EmbedBuilder()
-					embed.setTitle(kitsune.user.username + ' - orgp')
-					embed.setColor(`#F00000`)
-					embed.setDescription("Мы искали везде, но такого маршрута не знаем.")
-					msg.reply({ embeds: [embed] });
-				}
-			} else { // если тип не указан, то смотреть все типы
-				let found = ""
-				let embed = new Discord.EmbedBuilder()
-				if (cache_routes["trolley"+route]) { // смотрим троллейбусы
-					found = found + readableType["trolley"] + " №"+route+"\n"
-				}
-				if (cache_routes["bus"+route]) { // смотрим автобусы
-					found = found + readableType["bus"] + " №"+route+"\n"
-				}
-				if (cache_routes["tram"+route]) { // смотрим трамваи
-					found = found + readableType["tram"] + " №"+route+"\n"
-				}
-				if (found != "") {
-					embed.setTitle(kitsune.user.username + ' - orgp')
-					embed.setColor(`#F36B00`)
-					embed.setDescription("Вы не указали тип транспорта. Вот что мы нашли по всем типам транспорта:\n\n" + found)
-					msg.reply({ embeds: [embed] });
-					return;
-				} else {
-					embed.setTitle(kitsune.user.username + ' - orgp')
-					embed.setColor(`#F00000`)
-					embed.setDescription("Мы искали везде, но такого маршрута не знаем.")
-					msg.reply({ embeds: [embed] });
-					return;
-				}
+		const routes = await searchRoutes(routeName, type); // ищем маршруты
+		let exactRoutes = []
+		for await (const route of routes) {
+			if (route.ShortName.toLowerCase() === routeName) { // если есть ТОЧНОЕ совпадение имени
+				exactRoutes.push(route);
 			}
 		}
+		if (!exactRoutes[0]) { // если ничего не нашли
+			let embed = new Discord.EmbedBuilder()
+			.setTitle('no bitches')
+			.setColor(nek.config.errorcolor)
+			.setDescription('Не нашел ничего')
+			msg.reply({ embeds: [embed] });
+			return;
+		}
+		if (exactRoutes.length !== 1) { // если найдено несколько маршрутов
+			let out = "```\n"
+			for await (const route of exactRoutes) {
+				out += route.ShortName + " - " + readableType[route.TransportType] + "\n";
+			}
+			let embed = new Discord.EmbedBuilder()
+				.setTitle('А какой именно?')
+				.setColor(nek.config.errorcolor)
+				.setDescription("Было найдено несколько маршрутов. Попробуйте снова указав один из них:\n" + out + "```")
+			msg.reply({ embeds: [embed] });
+			return;
+		}
+		let embed = new Discord.EmbedBuilder()
+			.setTitle('ааааааа')
+			.setColor(nek.config.basecolor)
+			.setDescription("Ща погоди, погоди. Дай кое-чё попробую. \\*трансформируется в сбермегамаркет\\*")
+		msg.reply({ embeds: [embed] });
+		return;
 		
-		function get_cock(kitsune, msg, args, id, routenum, type) { // получить cookie и scope
-			//console.log('getting cock')
+		function createPayload(values){ // создать сайту отформатированный запрос. На вход объект с параметром (например {skip: 0, take: 20})
+			// генерируем разделятор
+			let webkit = '----WebKitFormBoundary';
+			let counter = 0;
+			while (counter < 16) {
+			  webkit += 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 62)); // берём рандом символ и пихаем
+			  counter += 1;
+			}
+
+			// делаем тело
+			let outputBody = ""; // duh
+			for (var [key, value] of Object.entries(values)) {
+				outputBody += "--" + webkit + "\r\n"; // пишем разделятор
+				outputBody += "Content-Disposition: form-data; name=\"" + key + "\"\r\n"; // пишем тип данных и их название, скип строки
+				outputBody += "\r\n"; // скипаем строку потому что bruh
+				outputBody += value + "\r\n"; // пишем значение и скипаем строку
+			}
+			outputBody += "--" + webkit + "--"; // пишем финальный разделятор
+			const encoder = new TextEncoder();  // создаем энкодер
+			return {boundary: webkit, body: encoder.encode(outputBody)}; 
+		}
+		
+		async function searchRoutes(name, type) { // найти маршрут по номеру маршрута
+			var fetch = require('node-fetch');
+			console.log('getting cock');
+			let payload
+			if (type) { // если дан тип транспорта
+				payload = createPayload({skip: 0, take: 20, transportTypes: type, routeShortName: name}); // генерируем payload
+			} else {
+				payload = createPayload({skip: 0, take: 20, routeShortName: name}); // генерируем payload
+			}
+			console.log(payload.body)
 			const options = { // параметры обращения к серваку
-			  uri: 'https://transport.orgp.spb.ru/Portal/transport/route/' + id,
+			  hostname: 'nts-admin.orgp.spb.ru',
+			  port: 443,
+			  path: '/api/visary/operator/route',
+			  method: 'POST',
 			  headers: {
-				"authority": "transport.orgp.spb.ru",
-				"scheme": "https"
+				"content-type": "multipart/form-data; boundary=" + payload.boundary,
+				'Content-Length': payload.body.length
 			  }
-			};
-			request.get(options, (err, res, body) => { // обращаемся к серваку
-				
-				if (body) {
-					if (body.indexOf('scope: "') != -1) { // если есть scope, то обрезать и запомнить
-						cache_scope = body.slice(body.indexOf('scope: "')+8)
-						cache_scope = cache_scope.slice(0, cache_scope.indexOf('"'))
-						cache_scope = cache_scope.replace(/\+/g, "%2B")
-					};
-				} else {
-					let embed = new Discord.EmbedBuilder()
-					embed.setTitle(kitsune.user.username + ' - orgp')
-					embed.setColor(`#F00000`)
-					embed.setDescription("Что-то пошло не так. Не удалось получить данные")
-					msg.reply({ embeds: [embed] });
-					return;
-				}
-				if (res) {
-					if (res.rawHeaders) {
-						if (String(res.rawHeaders).indexOf('JSESSIONID=')) { // если сайт выдал cookie, то обрезать и запомнить
-							cache_cookie = String(res.rawHeaders);
-							cache_cookie = cache_cookie.slice(cache_cookie.indexOf('JSESSIONID=')+11);
-							cache_cookie = cache_cookie.slice(0, cache_cookie.indexOf(';'));
-						} else {
-							console.log('no cookie');
-							return;
-						};
-					} else {
-						let embed = new Discord.EmbedBuilder()
-						embed.setTitle(kitsune.user.username + ' - orgp')
-						embed.setColor(`#F00000`)
-						embed.setDescription("Что-то пошло не так. Не удалось получить данные")
-						msg.reply({ embeds: [embed] });
-						return;
-					}
-				} else {
-					let embed = new Discord.EmbedBuilder()
-					embed.setTitle(kitsune.user.username + ' - orgp')
-					embed.setColor(`#F00000`)
-					embed.setDescription("Что-то пошло не так. Не удалось получить данные")
-					msg.reply({ embeds: [embed] });
-					return;
-				};
-				get_cars_on_route(kitsune, msg, args, id, routenum, type) // чекаем на сайте какие машины на маршруте
+			}
+			return new Promise((resolve, reject) => { // ждем пока получим ответ от сайта
+				const req = https.request(options, (res) => { // обращаемся к серваку
+					let data = "";
+					res.on('data', (d) => {
+						console.log('got data');
+						data = data + d;
+					});
+					res.on('end', () => {
+						console.log(data);
+						try {
+							const resp = JSON.parse(data);
+							if (!resp.Error) {
+								resolve(resp);
+							} else {
+								resolve(false);
+							}
+						} catch(e) {
+							console.error(e);
+							resolve(false);
+						}
+					});
+				});
+				req.on('error', (e) => {
+				  reject(e);
+				});
+				req.write(payload.body); // пишем данные в сайт
+				req.end();
 			});
 		};
 		function get_cars_on_route(kitsune, msg, args, id, routenum, type) { // получить список машин на маршруте (обязательно в кэше должен быть scope и cookie)
@@ -369,7 +356,7 @@ class Orgp {
 						return;
 					}
 				} else {
-					embed = new Discord.EmbedBuilder()
+					let embed = new Discord.EmbedBuilder()
 					embed.setTitle(kitsune.user.username + ' - orgp')
 					embed.setColor(`#F00000`)
 					embed.setDescription('Не удалось получить информацию о ' + vallu[1])

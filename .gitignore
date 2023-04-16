@@ -129,3 +129,4 @@ dist
 # nekit
 cmd.lnk
 src/config/secrets.json
+src/commands/oldorgp.js
