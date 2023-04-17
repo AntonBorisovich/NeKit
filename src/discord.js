@@ -10,6 +10,7 @@ const client = new Discord.Client({
 });
 
 let works = new Map(); // мапа, где хрянятся все команды, которые всё ещё обрабатываются
+let timeouts = new Map(); // мапа, где хрянятся пользователи с кулдауном
 let ignoreNewMsg = false; // если true, то новые команды не будут исполнятся
 
 class discord {
@@ -184,9 +185,29 @@ class discord {
 				args.pop() // удаляем код 2FA из аргументов после успешной проверки
 			}
 			
-			works.set(msg.id, {name: comm.name, timestamp: startTime}) // запоминаем, что мы начали работу над этой командой
+			if (timeouts.get(msg.author.id)) { // если пользователь в списке тайм-аута, то игнор
+				nek.log('MESSAGE', 'User is on cooldown. Ignoring', 'gray');
+				return;
+			}
+			timeouts.set(msg.author.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
+			setTimeout(() => {
+				timeouts.delete(msg.author.id); // удаляем из тайм-аута через 2 секунды
+			}, 2000);
+
+			works.set(msg.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
 			nek.log('MESSAGE', 'Executed  "' + comm.name + '" (' + msg.id + ')', 'gray');
-			await comm.run(nek, client, msg, args); // запускаем команду
+			try {
+				await comm.run(nek, client, msg, args); // запускаем команду
+			} catch(e) {
+				console.error(e);
+				let embed = new Discord.EmbedBuilder()
+					.setTitle('Ошибка')
+					.setColor(nek.config.errorcolor)
+					.setDescription("Произошла неизвестная ошибка")
+					.setFooter({text: e.name + ": " + e.message})
+				msg.reply({ embeds: [embed] });
+				return;
+			}
 			works.delete(msg.id); // удаляем, т.к. мы закончили работу
 			nek.log('MESSAGE', 'Done with "' + comm.name + '" (' + msg.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
 		}

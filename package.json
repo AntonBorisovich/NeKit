@@ -26,6 +26,7 @@
     "node-2fa": "^2.0.3",
     "numco": "^1.0.0",
     "pet-pet-gif": "^1.0.9",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "staticmaps": "^1.12.0"
   }
 }
