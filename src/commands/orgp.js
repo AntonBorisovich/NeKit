@@ -1,12 +1,16 @@
 const Discord = require("discord.js");
 const https = require("https");
 const numco = require("numco");
-const os = require('os'); // получение данных о системе для генерации useragent
 
-const bbox = "32.07063193633177,60.388067618549925,28.395705178519272,59.32897712054941" // в каком четырёхугольнике искать машины на карте
+const fullbbox = 		"31.262970,60.444011,28.473816,59.451358"; // https://i.imgur.com/l6al1YY.png
+
+const upperbbox = 		"31.262970,60.444011,28.473816,60.077345"; // https://i.imgur.com/3YGHqB5.png
+const upcitybbox = 		"31.262970,60.077345,28.473816,59.975975"; // https://i.imgur.com/3YGHqB5.png
+const downcitybbox = 	"31.262970,59.975975,28.473816,59.830670"; // https://i.imgur.com/3YGHqB5.png
+const downbbox = 		"31.262970,59.830670,28.473816,59.451358"; // https://i.imgur.com/3YGHqB5.png
 
 // для нормального отображения типа транспорта
-let readableType = []
+let readableType = [];
 readableType['trolley'] = "Троллейбус";
 readableType['bus'] = "Автобус";
 readableType['tram'] = "Трамвай";
@@ -19,7 +23,7 @@ class Orgp {
 		this.perms = ["EMBED_LINKS"];
         this.name = "orgp"; // имя команды
 		this.desc = "питерский транспорт"; // описание команды в общем списке команд
-		this.advdesc = "Берёт информацию о маршрутах в Санкт-Петербурге со [старого сайта \"Портал Общественного Транспорта Санкт-Петербурга\"](https://transport.orgp.spb.ru/Portal/transport/main).\nФото и данные о машинах предоставляются сайтом [transphoto.org](https://transphoto.org).\n\nСделано специально для <@374144960221413386>"; // описание команды в помоще по конкретной команде
+		this.advdesc = "Берёт информацию о маршрутах в Санкт-Петербурге с [сайта \"Портал Общественного Транспорта Санкт-Петербурга\"](https://transport.orgp.spb.ru/).\nФото и данные о машинах предоставляются сайтом [transphoto.org](https://transphoto.org).\n\nСделано специально для <@374144960221413386>"; // описание команды в помоще по конкретной команде
 		this.args = "<тип> <номер>"; // аргументы в общем списке команд
 		this.argsdesc = "<тип> - троллейбус (тро..), автобус (ав..), трамвай (тра..)\n<номер> - номер маршрута"; // описание аргументов в помоще по конкретной команде
 		this.advargs = "<тип> <номер>"; // аргументы в помоще по конкретной команде
@@ -46,34 +50,52 @@ class Orgp {
 			.setTitle('А че искать?')
 			.setColor(nek.config.errorcolor)
 			.setDescription('Укажите хотя бы номер маршрута')
-			msg.reply({ embeds: [embed] });
+			await msg.reply({ embeds: [embed] });
 			return;
 		}
-		msg.channel.sendTyping();
-		const transports  = await getTransport();
+		await msg.channel.sendTyping();
+		let transports  = await getTransport(type, fullbbox);
 		if (!transports) {
 			let embed = new Discord.EmbedBuilder()
 			.setTitle('Каво')
 			.setColor(nek.config.errorcolor)
 			.setDescription('Не удалось получить ответ от сайта. Попробуйте ещё раз')
-			msg.reply({ embeds: [embed] });
+			await msg.reply({ embeds: [embed] });
 			return;
+		}
+		if (transports.length === 1000) {
+			console.log('transport overflow');
+			let embed = new Discord.EmbedBuilder()
+			.setTitle('Их слишком много~')
+			.setColor(nek.config.basecolor)
+			.setDescription('На маршрутах слишком много транспорта. Их поиск займет ещё секунд 10...')
+			await msg.reply({ embeds: [embed] });
+			await msg.channel.sendTyping();
+
+			const trans1  = await getTransport(type, upperbbox);
+			const trans2  = await getTransport(type, upcitybbox);
+			const trans3  = await getTransport(type, downcitybbox);
+			const trans4  = await getTransport(type, downbbox);
+			transports = [...trans1, ...trans2, ...trans3, ...trans4];
 		}
 		let routeTransports = [];
 		let out = "```\n";
+		let counter = 0;
+		console.log('total routes: ' + transports.length);
 		for await (const trans of transports) {
 			if (trans.RouteShortName.toLowerCase() === routeName) {
-				//console.log('found!')
+				console.log('found!')
 				routeTransports.push(trans);
-				out += "№" + trans.VehicleLabel + "\n";
+				out += "№" + trans.VehicleLabel + " - " + trans.TransportType + "\n";
 			}
 		}
+		console.log('total found: ' + routeTransports.length);
 		if (!routeTransports[0]) { // если ничего не нашли
 			let embed = new Discord.EmbedBuilder()
 			.setTitle('no bitches')
 			.setColor(nek.config.errorcolor)
 			.setDescription('Не нашел ничего')
-			msg.reply({ embeds: [embed] });
+			await msg.reply({ embeds: [embed] });
 			return;
 		}
 		let embed = new Discord.EmbedBuilder()
@@ -81,13 +103,18 @@ class Orgp {
 			.setColor(nek.config.basecolor)
 			.setDescription("Чето нашел:\n" + out + "```")
 			.setFooter({text: "Пока это всё, что умеет эта команда. Скоро я прикручу transphotos, fotobus и всякое другое."})
-		msg.reply({ embeds: [embed] });
+		await msg.reply({ embeds: [embed] });
 		return;
+
+
+/////////
+
 
 		const routes = await searchRoutes(routeName, type); // ищем маршруты
 		
 		let exactRoutes = []
 		for await (const route of routes) {
+			console.log(route.ShortName);
 			if (route.ShortName.toLowerCase() === routeName) { // если есть ТОЧНОЕ совпадение имени
 				exactRoutes.push(route);
 			}
@@ -189,15 +216,15 @@ class Orgp {
 				req.end();
 			})
 		}
-		async function getTransport(type) {
-			let transoso = ''
+		async function getTransport(type, bbox) {
+			let transport = ''
 			if (type) {
-				transoso = 'transport=' + type + '&'
+				transport = 'transport=' + type + '&'
 			}
 			const options = { // параметры обращения к серваку
 			  hostname: 'nts-admin.orgp.spb.ru',
 			  port: 443,
-			  path: '/api/visary/geometry/vehicle?' + transoso + 'bbox=' + bbox,
+			  path: '/api/visary/geometry/vehicle?' + transport + 'bbox=' + bbox,
 			  method: 'GET',
 			  headers: {}
 			}
