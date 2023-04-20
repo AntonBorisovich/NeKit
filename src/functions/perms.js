@@ -87,8 +87,6 @@ class Perms {
 		
 		return [false]; // возвращаем пустоту, ведь нет никаких отсутствующих прав
 	}
-
-	
 }
 
 module.exports = Perms;

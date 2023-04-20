@@ -40,9 +40,8 @@ class GetAttach {
 	//	> }
 	//  если ничего не найдено, то и будет пустой массив ( [] )
 	//
-    async getAttach(nek, msg, method, type, limit, onlyFirst){
+    async getAttach(nek, msg, method, type = "any", limit = "10", onlyFirst){
 		let attachments = [];
-		if (!type) type = "any";
 		if (method === "msg" || method === "any") {
 			if (msg.attachments) { // если у сообщения есть вложение 
 				if (type !== 'any') { // если надо конкретный тип вложения
