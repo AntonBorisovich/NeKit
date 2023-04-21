@@ -233,8 +233,13 @@ class discord {
 					return;
 				};
 				const comm = nek.commands.get(customId[2]);
+				if (!comm) {
+					nek.log('INTERACTION', 'Unknown command!');
+					return;
+				}
 				
-				
+				const startTime = Date.now(); // запоминаем когда начали работать над командой
+				const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав
 				let sendMsgPerm = "SEND_MESSAGES"; // проверять право, которое даст нам печатать в КАНАЛАХ
 				if (msg.channel.type === Discord.ChannelType.GuildForum || msg.channel.type === Discord.ChannelType.GuildPublicThread || msg.channel.type === Discord.ChannelType.GuildPrivateThread) {
 					sendMsgPerm = "SEND_MESSAGES_IN_THREADS"; // если сообщение в ветке, то проверять право, которое даст нам печатать в ВЕТКАХ
@@ -261,7 +266,6 @@ class discord {
 						return;
 					}
 				}
-				
 				
 				works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
 				nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ')', 'gray');

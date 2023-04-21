@@ -106,7 +106,7 @@ class Stts {
 	
 	// searchTransport - поиск транспорта
 	// Действие: index-qsearch
-	// ВХОД:  num - номер, type - тип транспорта (ъ), ТС, city - город
+	// ВХОД:  num - номер ТС, type - тип транспорта (ъ), ТС, city - город
 	// > num обязателен
 	// > без type будет поиск любого типа транспорта
 	// > без city будет поиск в любом городе
@@ -114,6 +114,7 @@ class Stts {
 	// [
 	//	{
 	//		link: <ссылка на транспорт>,
+	//		id : <id транспорта>
 	//		model: <модель транспорта>,
 	//		park: <наименование парка>,
 	//		date: <годы эксплуатации>,
@@ -122,7 +123,7 @@ class Stts {
 	// ]
 	//  массив сортируется по годам эксплуатации. Т.е. если транспорт эксплуатируется, то он будет первее чем тот, что имеет тот же номер, но уже списан.
 	searchTransport(){ 
-		return false;
+	
 	}
 	
 	
@@ -131,9 +132,40 @@ class Stts {
 	// Действие: get-regions
 	// Действие: get-pub-photos 
 	
-	// функции, если надо получить чето конкретное
-	// ВХОД и ВЫХОД смотрите в инфе к каждой функции
-	// потом
+	// функции, которые парсят что-либо с сайта
+
+	// searchTransportFull - поиск полной инфы о транспорте
+	// использует функцию: searchTransport (vehicleId)
+	// ВХОД:
+	// {
+	//	vehicleId - id транспорта (если уже известен. Тогда следующие параметры будут проигнорированны)
+	//	num - номер ТС
+	//	type - тип транспорта
+	//	city - город
+	// }
+	// ВЫХОД: 
+	// 
+	searchOneTransportFull(object){
+		return {
+			label: 1337,
+			city: "Перделки",
+			park: "Электробусно-паровозный парк",
+			street: "Улица Перделкино",
+			links: {
+				city: "https://www.amogus.org/",
+				park: "https://github.com/Amog-OS/AmogOS",
+				vehicle: "https://ziu682.ucoz.ru/",
+				photo: "https://tenor.com/ru/"
+			},
+			model: "Sussy Bussy Baka",
+			date: "15 июня 2018 г.",
+			author: "нисисисись",
+			fullPic: "https://media.tenor.com/jUMex_rdqPwAAAAd/among-us-twerk.gif",
+			previewPic: "https://media.tenor.com/h99LQHUExJIAAAAd/19dollar-fortnite-card-among-us.gif",
+			id: 228668,
+			comments: -1
+		}
+	}
 }
 
 module.exports = Stts;
