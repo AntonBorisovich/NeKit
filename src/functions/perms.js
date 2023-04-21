@@ -44,10 +44,10 @@ const perm2bit = { // блять как же я ненавижу за это dis
 	//VIEW_CREATOR_MONETIZATION_ANALYTICS: Discord.PermissionsBitField.Flags.ViewCreatorMonetizationAnalytics,
 	VIEW_GUILD_INSIGHTS: Discord.PermissionsBitField.Flags.ViewGuildInsights
 }
-bit2perm = {};
-for (var [key, value] of Object.entries(perm2bit)) { // перебираем каждое значение этого дерьма выше
-    bit2perm[value] = key; // меняем местами значение (value) и имя этого значения (key)
-}
+//bit2perm = {};
+//for (var [key, value] of Object.entries(perm2bit)) { // перебираем каждое значение этого дерьма выше
+//    bit2perm[value] = key; // меняем местами значение (value) и имя этого значения (key)
+//}
 
 class Perms {
     constructor(nek){
@@ -63,29 +63,18 @@ class Perms {
 	//  perms - массив пермишенов ( например: ["READ_MESSAGE_HISTORY", "EMBED_LINKS", "ATTACH_FILES"] )
 	//  > https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags 
 	// ВЫХОД:
-	//  Массив тех прав, которые отсутствуют в канале ( например: ["ATTACH_FILES", "EMBED_LINKS"] )
+	//  Массив тех прав, которые отсутствуют в канале ( например: ["AttachFiles", "EmbedLinks"] )
 	//
     checkPerms(nek, msg, perms){
 		if (!msg.guild) { // если нету сервера, то нечего и проверять
-			return [false]; // возвращаем пустоту, ведь нет никаких отсутствующих прав
+			return []; // возвращаем пустоту, ведь нет никаких отсутствующих прав
 		}
-
 		let permsBit = []; // задаём массив переведённых прав
 		for (let perm of perms) { // переводим каждое право для discord.js
 			permsBit.push(perm2bit[perm]);
 		}
 		const botPerms = msg.guild.members.me.permissionsIn(msg.channel); // получаем все права бота в данном канале
-		if (!botPerms.has(permsBit)) { // проверяем права. И если какого-то права нету, то разузнать какого
-			let lostPerms = [];
-			permsBit.forEach(perm => { // перебираем каждое право по одному
-				if (!botPerms.has(perm)) {
-					lostPerms.push(bit2perm[perm]);
-				}
-			})
-			return lostPerms;
-		}
-		
-		return [false]; // возвращаем пустоту, ведь нет никаких отсутствующих прав
+		return botPerms.missing(permsBit);
 	}
 }
 
