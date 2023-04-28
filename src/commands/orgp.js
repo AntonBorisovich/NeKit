@@ -111,16 +111,20 @@ const getTransport = async (type, bbox) => {
 }
 
 // Функции обработки interaction-ов
-async function sendMap(nek, interaction, args) {
+const pageGeo = async (nek, client, interaction) => {
+	console.log(interaction.values)
 	// получаем 
-	const car = routeTransports[randomNumber];
+	const valueArgs = interaction.values[0].split("_"); // разделяем value по подстрочникам
 	
 	embed = new Discord.EmbedBuilder()
-		.setTitle('Эксперемексы')
+		.setTitle('Геолокация')
 		.setColor(nek.config.basecolor)
-		.setDescription("Генерирую карту для " + car.VehicleLabel + "...")
-	const mapmsg = await msg.reply({ embeds: [embed] });
+		.setDescription("Страница с картой")
+	await interaction.message.edit({ embeds: [embed] });
+	console.log(valueArgs)
 	
+	
+	return;
 	
 	let directionRounded = Math.ceil(car.Direction / 15) * 15; // округляем градусы по 15
 	if (directionRounded === 360) directionRounded = 0;
@@ -164,11 +168,53 @@ async function sendMap(nek, interaction, args) {
 		.setImage('attachment://' + car.VehicleLabel + '.png')
 		.setFooter({text: 'Нет. Пока нельзя выбрать для какой именно машины отобразить карту. Ждите обновы'})
 	const fileWithName = new Discord.AttachmentBuilder(mappic, { name: car.VehicleLabel + '.png' });
-	await mapmsg.edit({files: [fileWithName], embeds: [embed]}); // отправляем
+	await interaction.message.edit({files: [fileWithName], embeds: [embed]}); // отправляем
 	return;		
 }
-async function sendPhoto(nek, interaction, args) {
+const pagePhoto = async (nek, client, interaction) => {
+	const customId = interaction.customId.split("_"); // разделяем value по подстрочникам
+	const valueArgs = interaction.values[0].split("_"); // разделяем value по подстрочникам
 	
+	const embed = new Discord.EmbedBuilder()
+		.setTitle('Фото ')
+		.setColor(nek.config.basecolor)
+		.setDescription("Страница с фоткой")
+		
+	const unzipedLabels = numco.decompress(customId[5]); // сжимаем бортовые номера
+	const selectList = new Discord.StringSelectMenuBuilder()
+			.setCustomId(customId.splice(-1, 1) + "_lp")
+			.setPlaceholder('Получить больше инфы о...')
+		
+	await unzipedLabels.forEach((label) => {
+		selectList.addOptions({
+			label: String(label).substring(1),
+			value: String(label).substring(1)
+		});
+	});
+	
+	const photo = new Discord.ButtonBuilder()
+		.setCustomId(customId.splice(-1, 1) + "_bp")
+		.setLabel('Фото')
+		.setStyle(Discord.ButtonStyle.Primary)
+		.setDisabled(true)
+	const geo = new Discord.ButtonBuilder()
+		.setCustomId(customId.splice(-1, 1) + "_bg")
+		.setLabel('Местоположение')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(false)
+	const update = new Discord.ButtonBuilder()
+		.setCustomId(customId.splice(-1, 1) + "_bu")
+		.setLabel('Обновить')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(true)
+	
+	// создаем строки интерактивных элементов
+	const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
+	const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, geo, update);
+
+	await interaction.message.edit({ embeds: [embed], components: [listRow, buttonsRow] });
+	
+	return;
 }
 
 
@@ -188,9 +234,9 @@ const readableType = {
 	'tram': 'трамвай'
 }
 const toShortType = {
-	'trolley': 1,
-	'bus': 2,
-	'tram': 3
+	'trolley': 0,
+	'bus': 1,
+	'tram': 2
 }
 const fromShortType = [
 	'trolley',
@@ -413,24 +459,30 @@ class Orgp {
 			}
 			
 			// списки
-			let selectList
+			let selectList;
+			const zipedLabels = numco.compress(labels); // сжимаем бортовые номера
+			const preCustomId = msg.author.id + "_0_orgp_" // данные, которые должны быть в каждом customId
+			console.log(preCustomId.length+3);
+			if (preCustomId.length+3 > 100) {
+				console.log("wtf too much shit");
+				await waitmsg.edit({ embeds: [embed] });
+				return;
+			}
+			
 			if (labels.length <= 25) {
-				const zipedLabels = numco.compress(labels); // сжимаем бортовые номера
 				selectList = new Discord.StringSelectMenuBuilder()
-					.setCustomId(msg.author.id + "_0_orgp_l_p")
+					.setCustomId(preCustomId + "_" + zipedLabels + "_lp")
 					.setPlaceholder('Получить больше инфы о...')
-					.setDisabled(true)
-				
+					.setDisabled(false)
 				await labels.forEach((label) => {
 					selectList.addOptions({
 						label: label.substring(1),
-						value: String(routeTransports[0].RouteId + "_" + label + "_" + zipedLabels)
+						value: label.substring(1)
 					});
 				});
 			} else {
-				const zipedLabels = numco.compress(labels); // сжимаем бортовые номера
 				selectList = new Discord.StringSelectMenuBuilder()
-					.setCustomId(msg.author.id + "_0_orgp_l_p")
+					.setCustomId("too much")
 					.setPlaceholder('Получить больше инфы о...')
 					.setDisabled(true)
 				selectList.addOptions({
@@ -442,17 +494,17 @@ class Orgp {
 			
 			// кнопки
 			const photo = new Discord.ButtonBuilder()
-				.setCustomId(msg.author.id + "_0_orgp_b_p")
+				.setCustomId(preCustomId + "_bp")
 				.setLabel('Фото')
 				.setStyle(Discord.ButtonStyle.Primary)
 				.setDisabled(true)
 			const geo = new Discord.ButtonBuilder()
-				.setCustomId(msg.author.id + "_0_orgp_b_g")
+				.setCustomId(preCustomId + "_bg")
 				.setLabel('Местоположение')
 				.setStyle(Discord.ButtonStyle.Primary)
 				.setDisabled(true)
 			const update = new Discord.ButtonBuilder()
-				.setCustomId(msg.author.id + "_0_orgp_b_u")
+				.setCustomId(preCustomId + "_bu")
 				.setLabel('Обновить')
 				.setStyle(Discord.ButtonStyle.Secondary)
 				.setDisabled(true)
@@ -523,18 +575,21 @@ class Orgp {
 		}
 	}
 	
-	async interaction(nek, interaction, args){
+	async interaction(nek, client, interaction){
 		
-		
-		
-		//if (args[4] === "g"){ // geo
-		//	await sendMap(nek, interaction, args);
-		//}
-		//if (args[4] === "p"){ // photo
-		//	await sendPhoto(nek, interaction, args);
-		//}
-		
-		
+		const customId = interaction.customId.split("_")
+		console.log(customId)
+		if (customId[3].substring(1) === "g"){ // geo
+			await interaction.deferUpdate();
+			await pageGeo(nek, client, interaction);
+			return;
+		}
+		if (customId[3].substring(1) === "p"){ // photo
+			await interaction.deferUpdate();
+			await pagePhoto(nek, client, interaction);
+			return;
+		}
+		await interaction.reply({content: 'чето не то'});
 		return;
 	}
 };

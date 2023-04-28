@@ -270,7 +270,7 @@ class discord {
 				works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
 				nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ')', 'gray');
 				try {
-					await comm.interaction(nek, client, msg, args); // запускаем команду
+					await comm.interaction(nek, client, interaction); // запускаем команду
 				} catch(e) {
 					console.error(e);
 					let embed = new Discord.EmbedBuilder()
@@ -278,7 +278,7 @@ class discord {
 						.setColor(nek.config.errorcolor)
 						.setDescription("Произошла неизвестная ошибка")
 						.setFooter({text: e.name + ": " + e.message})
-					interaction.reply({ embeds: [embed] });
+					interaction.message.reply({ embeds: [embed] });
 					return;
 				}
 				works.delete(interaction.id); // удаляем, т.к. мы закончили работу
