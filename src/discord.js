@@ -20,6 +20,8 @@ class discord {
     }
 	
     async start(nek){ // ОБЫЧНОЕ НАЧАЛО РАБОТЫ
+		const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав, она будет использоватся далее
+		
 		process.on('uncaughtException', function (err) {
 			nek.log('ERROR', 'Got uncaught error! Check log below:', 'red');
 			console.error(err);
@@ -106,9 +108,9 @@ class discord {
 			}
 
 			const startTime = Date.now(); // запоминаем когда начали работать над командой
-			const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав
 			
-			if (args[args.length-1].toLowerCase() === "--help") { // если последний аргумент - "--help
+			
+			if (args[args.length-1].toLowerCase() === "--help") { // если последний аргумент - "--help"
 				const helpComm = nek.commands.get("help"); // ищем команду help
 				args = [nek.config.prefix + helpComm.name, comm.name]; // подменяем аргументы
 				comm = helpComm; // подменяем исполняемую команду на help
@@ -239,7 +241,7 @@ class discord {
 				}
 				
 				const startTime = Date.now(); // запоминаем когда начали работать над командой
-				const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав
+				//const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав
 				let sendMsgPerm = "SEND_MESSAGES"; // проверять право, которое даст нам печатать в КАНАЛАХ
 				if (msg.channel.type === Discord.ChannelType.GuildForum || msg.channel.type === Discord.ChannelType.GuildPublicThread || msg.channel.type === Discord.ChannelType.GuildPrivateThread) {
 					sendMsgPerm = "SEND_MESSAGES_IN_THREADS"; // если сообщение в ветке, то проверять право, которое даст нам печатать в ВЕТКАХ

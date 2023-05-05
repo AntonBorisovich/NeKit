@@ -22,7 +22,7 @@
   "dependencies": {
     "canvas": "^2.11.2",
     "commander": "^10.0.1",
-    "discord.js": "^14.9.0",
+    "discord.js": "^14.10.2",
     "md5": "^2.3.0",
     "node-2fa": "^2.0.3",
     "numco": "^1.0.0",

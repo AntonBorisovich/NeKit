@@ -1,15 +1,16 @@
 @ECHO OFF
 title Bot Launcher
 cls
-echo.
-echo It is highly recommended to run the bot via pm2
-echo.
 :boot
 node index.js
 echo.
 set proceed=""
-set /p proceed=Would you like to boot up your bot again? (y/n):
+:choice
+set /p proceed=Restart? (y/n):
+if "%proceed%"=="Y" goto boot
+if "%proceed%"=="н" goto boot
 if "%proceed%"=="y" goto boot
 if "%proceed%"=="n" exit
-if "%proceed%"=="Y" goto boot
+if "%proceed%"=="т" exit
 if "%proceed%"=="N" exit
+goto choice
