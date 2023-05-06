@@ -62,7 +62,7 @@ class Help {
 			msg.reply({ embeds: [embed] }); // отправить
 			return;
 		}
-		if (!comm.version) comm.version = 'too old (not stable)';
+		if (!comm.version) comm.version = 'not stable';
 		let embed = new Discord.EmbedBuilder()
 			.setTitle(comm.name + ' - ' + comm.desc)
 			.setColor(nek.config.basecolor)
