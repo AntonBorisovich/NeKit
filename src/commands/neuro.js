@@ -73,11 +73,21 @@ const checkProgress = async () => {
 	})
 }
 const txt2img = async (nek, client, interaction) => {
+	if (!workingNow.id) workingNow = {timestamp: Date.now(), id: interaction.message.id, step: workingNow.step+1}
+	if (interaction.message.id != workingNow.id) {
+		let embed = new Discord.EmbedBuilder()
+			.setTitle('Подождите')
+			.setColor(nek.config.errorcolor)
+			.setDescription('Кто-то уже использует команду. Подождите несколько минут и попробуйте снова');
+		await interaction.message.edit({ embeds: [embed], components: [] }); // запоминаем сообщение
+		return;
+	}
 	const oldEmbed = interaction.message.embeds[0];
 	const oldComponents = interaction.message.components;
 	const positivePrompts = oldEmbed.fields[0].value.replace(/`/g, '');
-	const negativePrompts = oldEmbed.fields[1].value.replace(/`/g, '');
+	let negativePrompts = oldEmbed.fields[1].value.replace(/`/g, '');
 	if (!negativePrompts) negativePrompts = "mutation, watermark";
+	if (!interaction.message.channel.nsfw) negativePrompts = negativePrompts + ", (nsfw, explicit, questionable, pussy, breasts, nipple, areolae:1.2)"
 	const steps = oldEmbed.fields[2].value.replace(/`/g, '')
 	let embed = new Discord.EmbedBuilder()
 		.setTitle('Генерация')
@@ -96,6 +106,7 @@ const txt2img = async (nek, client, interaction) => {
 		method: 'POST',
 		headers: {}
 	}
+	const filterNsfw = !interaction.message.channel.nsfw
 	const payload = {
 		prompt: positivePrompts,
 		negative_prompt: negativePrompts,
@@ -103,6 +114,9 @@ const txt2img = async (nek, client, interaction) => {
 		batch_size: defBatch,
 		width: width,
 		height: height
+		//override_settings: {
+		//	"filter_nsfw": filterNsfw
+		//
 	}
 	let previewCoolDown = 0;
 	embed = new Discord.EmbedBuilder()
@@ -150,6 +164,7 @@ const txt2img = async (nek, client, interaction) => {
 		req.end();
 	})
 	clearInterval(timerId); // останавливаем проверку прогресса
+	//console.log(imgResult)
 	const imgBuffer = new Buffer.from(imgResult.images[0], "base64");
 	embed = new Discord.EmbedBuilder()
 		.setTitle('Готово')
@@ -221,7 +236,8 @@ const changeModel = async (nek, client, interaction) => {
 			interaction.message.edit({ embeds: [embedus], components: []})
 			workingNow = {timestamp: 0, id: false, step: 0};
 		}
-	}, 5000);
+	}, 30000
+	);
 	return;
 }
 
@@ -323,7 +339,7 @@ class Neuro {
 		const positivePrompts = args.join(' ');
 		const negativePrompts = false;
 		const steps = defSteps;
-		const NSFW = msg.channel.nsfw;
+		//const NSFW = msg.channel.nsfw;
 		embed = new Discord.EmbedBuilder()
 			.setTitle('Соединение установлено')
 			.setColor(nek.config.basecolor)
@@ -346,8 +362,8 @@ class Neuro {
 		const startButt = new Discord.ButtonBuilder()
 			.setCustomId(msg.author.id + "_0_" + this.name + "_t")
 			.setLabel('Начать')
-			.setStyle(Discord.ButtonStyle.Secondary)
-			.setDisabled(true)
+			.setStyle(Discord.ButtonStyle.Success)
+			.setDisabled(false)
 		const interruptButt = new Discord.ButtonBuilder()
 			.setCustomId(msg.author.id + "_0_" + this.name + "_i")
 			.setLabel('Прервать')
