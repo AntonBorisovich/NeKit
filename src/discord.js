@@ -216,7 +216,9 @@ class discord {
 		//   <ID Пользователя, который в первый раз нажал на кнопку>_<можно ли другим людям нажимать на кнопку (0 или 1)>_<исполяемая команда>_<данные>
 		// Пример:
 		//   929443921069752331_0_help_Guide0
-		client.on(Discord.Events.InteractionCreate, async (interaction) => {				
+		client.on(Discord.Events.InteractionCreate, async (interaction) => {
+				if (interaction.isModalSubmit()) return; // тихо игнорим modal (они должны обрабатываться в коде команды
+				
 				if (!interaction.isButton() && !interaction.isStringSelectMenu()) { // если не кнопка и не список
 					nek.log('INTERACTION', 'Got unknown interaction', 'gray');
 					return;

@@ -24,12 +24,12 @@ const createPayload = (values) => { // создать сайту отформа�
 	const encoder = new TextEncoder();  // создаем энкодер, что бы сайт понял русские символы
 	return {boundary: webkit, body: encoder.encode(outputBody)}; // возвращаем разделятор и энкодированные параметры
 }
-const searchRoute = async (name, type) => { // найти маршрут по номеру маршрута
+const searchRoute = async (name, type, skip = 0) => { // найти маршрут по номеру маршрута
 	let payload;
 	if (type) { // если дан тип транспорта
-		payload = createPayload({skip: 0, take: 20, transportTypes: type, routeShortName: name}); // генерируем payload
+		payload = createPayload({skip: skip, take: 20, transportTypes: type, routeShortName: name}); // генерируем payload
 	} else {
-		payload = createPayload({skip: 0, take: 20, routeShortName: name}); // генерируем payload
+		payload = createPayload({skip: skip, take: 20, routeShortName: name}); // генерируем payload
 	}
 	//console.log(payload.body)
 	const options = { // параметры обращения к серваку
@@ -217,6 +217,189 @@ const pagePhoto = async (nek, client, interaction) => {
 	return;
 }
 
+const argsGUI = async (nek, msg, args) => {
+	let embed
+	
+	let byLabel = new Discord.ButtonBuilder()
+		.setCustomId("byLabel")
+		.setLabel('По борт. номеру')
+		.setStyle(Discord.ButtonStyle.Primary)
+		.setDisabled(false)
+	let byRoute = new Discord.ButtonBuilder()
+		.setCustomId("byRoute")
+		.setLabel('По номеру маршрута')
+		.setStyle(Discord.ButtonStyle.Primary)
+		.setDisabled(false)
+	let searchRoute = new Discord.ButtonBuilder()
+		.setCustomId("searchRoute")
+		.setLabel('Найти маршрут')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(false)
+	const rowBefore = new Discord.ActionRowBuilder().addComponents(byLabel, byRoute, searchRoute);
+		
+	let byLabelOff = new Discord.ButtonBuilder()
+		.setCustomId("byLabel")
+		.setLabel('По борт. номеру')
+		.setStyle(Discord.ButtonStyle.Primary)
+		.setDisabled(true)
+	let byRouteOff = new Discord.ButtonBuilder()
+		.setCustomId("byRoute")
+		.setLabel('По номеру маршрута')
+		.setStyle(Discord.ButtonStyle.Primary)
+		.setDisabled(true)
+	let searchRouteOff = new Discord.ButtonBuilder()
+		.setCustomId("searchRoute")
+		.setLabel('Найти маршрут')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(true)
+	const rowAfter = new Discord.ActionRowBuilder().addComponents(byLabelOff, byRouteOff, searchRouteOff);
+	
+	embed = new Discord.EmbedBuilder()
+		.setTitle('Поиск транспорта в Санкт-Петербурге')
+		.setColor(nek.config.basecolor)
+		.setDescription('Вы можете найти транспорт по бортовому/парковому номеру, по номеру маршрута. Вы можете найти номер маршрута, если не уверены, что он существует')
+		.setFooter({text: 'Если вы не хотите каждый раз нажимать кнопки и заполнять форму, то используйте аргументы (' + nek.config.prefix + 'help orgp --help)'})
+	// создаем строки интерактивных элементов
+	const response = await msg.reply({
+		embeds: [embed],
+		components: [rowBefore]
+	});
+	
+	const collectorFilter = i => i.user.id === msg.author.id;
+	try {
+		const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 60000 });
+		let orgpArgs = {};
+		orgpArgs.workMode = confirmation.customId;
+		orgpArgs.transType = false;
+		orgpArgs.arbArg = false;
+		
+			
+		if (confirmation.customId === 'byLabel') {
+			const modal = new Discord.ModalBuilder()
+				.setCustomId('byLabel')
+				.setTitle('Поиск по бортовому/парковому номеру');
+			const labelInput = new Discord.TextInputBuilder()
+				.setCustomId('labelNum')
+				.setLabel("Бортовой номер")
+				.setPlaceholder('например 5051')
+				.setStyle(Discord.TextInputStyle.Short)
+				.setRequired(true);
+			const typeInput = new Discord.TextInputBuilder()
+				.setCustomId('type')
+				.setLabel("Тип транспорта")
+				.setPlaceholder('троллейбус (тро...), автобус (ав...), трамвай (тра...)')
+				.setStyle(Discord.TextInputStyle.Short)
+				.setRequired(false);
+			const row1 = new Discord.ActionRowBuilder().addComponents(labelInput);
+			const row2 = new Discord.ActionRowBuilder().addComponents(typeInput);
+			
+			modal.addComponents(row1, row2);
+			modalResponse = await confirmation.showModal(modal);
+			try {
+				const modalConfirmation = await confirmation.awaitModalSubmit({ filter: collectorFilter, time: 60000 });
+				
+				orgpArgs.arbArg = modalConfirmation.fields.getTextInputValue('labelNum');
+				orgpArgs.transType = modalConfirmation.fields.getTextInputValue('type');
+				await modalConfirmation.deferUpdate();
+				await response.delete();
+				return orgpArgs;
+			} catch (e) {
+				embed.setFooter({text: 'Вы не заполнили форму в течение минуты. Запрос отменён'})
+				await response.edit({
+					embeds: [embed],
+					components: [rowAfter]
+				});
+				return 'timeout';
+			}
+			
+			
+		} else if (confirmation.customId === 'byRoute') {
+			const modal = new Discord.ModalBuilder()
+				.setCustomId('byRoute')
+				.setTitle('Поиск по номеру маршрута');
+			const routeInput = new Discord.TextInputBuilder()
+				.setCustomId('routeNum')
+				.setLabel("Номер маршрута")
+				.setPlaceholder('например 37')
+				.setStyle(Discord.TextInputStyle.Short)
+				.setRequired(true);
+			const typeInput = new Discord.TextInputBuilder()
+				.setCustomId('type')
+				.setLabel("Тип транспорта")
+				.setPlaceholder('троллейбус (тро...), автобус (ав...), трамвай (тра...)')
+				.setStyle(Discord.TextInputStyle.Short)
+				.setRequired(false);
+			const row1 = new Discord.ActionRowBuilder().addComponents(routeInput);
+			const row2 = new Discord.ActionRowBuilder().addComponents(typeInput);
+			
+			modal.addComponents(row1, row2);
+			modalResponse = await confirmation.showModal(modal);
+			try {
+				const modalConfirmation = await confirmation.awaitModalSubmit({ filter: collectorFilter, time: 60000 });
+				
+				orgpArgs.arbArg = modalConfirmation.fields.getTextInputValue('routeNum');
+				orgpArgs.transType = modalConfirmation.fields.getTextInputValue('type');
+				await modalConfirmation.deferUpdate();
+				await response.delete();
+				return orgpArgs;
+			} catch (e) {
+				embed.setFooter({text: 'Вы не заполнили форму в течение минуты. Запрос отменён'})
+				await response.edit({
+					embeds: [embed],
+					components: [rowAfter]
+				});
+				return 'timeout';
+			}
+			
+		} else if (confirmation.customId === 'searchRoute') {
+			const modal = new Discord.ModalBuilder()
+				.setCustomId('searchRoute')
+				.setTitle('Поиск маршрута');
+			const routeInput = new Discord.TextInputBuilder()
+				.setCustomId('routeNum')
+				.setLabel("Номер маршрута")
+				.setPlaceholder('например 2')
+				.setStyle(Discord.TextInputStyle.Short)
+				.setRequired(true);
+			const typeInput = new Discord.TextInputBuilder()
+				.setCustomId('type')
+				.setLabel("Тип транспорта")
+				.setPlaceholder('троллейбус (тро...), автобус (ав...), трамвай (тра...)')
+				.setStyle(Discord.TextInputStyle.Short)
+				.setRequired(false);
+				
+			const row1 = new Discord.ActionRowBuilder().addComponents(routeInput);
+			const row2 = new Discord.ActionRowBuilder().addComponents(typeInput);
+
+			modal.addComponents(row1, row2);
+			modalResponse = await confirmation.showModal(modal);
+			try {
+				const modalConfirmation = await confirmation.awaitModalSubmit({ filter: collectorFilter, time: 60000 });
+				
+				orgpArgs.arbArg = modalConfirmation.fields.getTextInputValue('routeNum');
+				orgpArgs.transType = modalConfirmation.fields.getTextInputValue('type');
+				await modalConfirmation.deferUpdate();
+				await response.delete();
+				return orgpArgs;
+			} catch (e) {
+				embed.setFooter({text: 'Вы не заполнили форму в течение минуты. Запрос отменён'})
+				await response.edit({
+					embeds: [embed],
+					components: [rowAfter]
+				});
+				return 'timeout';
+			}
+		}
+	} catch (e) {
+		embed.setFooter({text: 'Вы не нажали на кнопку в течении минуты. Запрос отменён'})
+		await response.edit({
+			embeds: [embed],
+			components: [rowAfter]
+		});
+		return 'timeout';
+	}
+}
+
 
 const fullbbox = "31.262970,60.444011,28.473816,59.451358"; // https://i.imgur.com/l6al1YY.png
 
@@ -305,49 +488,64 @@ class Orgp {
 
     async run(nek, client, msg, args){
 		args.shift(); // режем первый аргумент т.к. это название команды
-		if (!args[0]) {
-			let embed = new Discord.EmbedBuilder()
-			.setTitle('А че делать то?')
-			.setColor(nek.config.errorcolor)
-			.setDescription('Вы не указали ни одного аргумента. Их "интерактивное заполнение" пока не реализованно. Читайте аргументы в `' + nek.config.prefix + this.name + ' --help`')
-			await msg.reply({ embeds: [embed] });
-			return;
-		}
-		
-		// обработка аргументов
-		let transType = false;
-		let routeName = false;
-		let workMode = false;
-		let arbArg = false;
-		
-		for await (const arg of args) {
-			// тип транспорта (transport type)
-			if (arg.toLowerCase().startsWith('тро') || arg.toLowerCase().startsWith('nhj')) { // троллейбус
-				transType = "trolley";
-			} else if (arg.toLowerCase().startsWith('ав') || arg.toLowerCase().startsWith('fd')) { // автобус
-				transType = "bus";
-			} else if (arg.toLowerCase().startsWith('тра') || arg.toLowerCase().startsWith('nhf')) { // трамвай
-				transType = "tram";
-				
-			// режим работы (work mode)
-			} else if (arg.toLowerCase() === 'route' || arg.toLowerCase() === 'маршрут') {
-				workMode = "byRoute";
-			} else if (arg.toLowerCase() === 'label' || arg.toLowerCase() === 'номер') {
-				workMode = "byLabel";
-			} else if (arg.toLowerCase() === 'search' || arg.toLowerCase() === 'поиск') {
-				workMode = "searchRoute";
-				
-			// любой иной произвольный аргумент (arbitrary argument)
+		let orgpArgs = {};
+		if (!args[0]) { // если не был дан никакой аргумент
+			orgpArgs = await argsGUI(nek, msg, args); // ждем, пока мы получим ответ от интерактивного заполнения
+			if (!orgpArgs) {
+				let embed = new Discord.EmbedBuilder()
+					.setTitle('Ошибка')
+					.setColor(nek.config.errorcolor)
+					.setDescription("Произошла ошибка 0xc000007b")
+				await msg.reply({ embeds: [embed] }); // запоминаем сообщение
+				return;
+			}
+			if (orgpArgs === "timeout") return;
+			if (orgpArgs.transType.toLowerCase().startsWith('тро') || orgpArgs.transType.toLowerCase().startsWith('nhj')) { // троллейбус
+				orgpArgs.transType = "trolley";
+			} else if (orgpArgs.transType.toLowerCase().startsWith('ав') || orgpArgs.transType.toLowerCase().startsWith('fd')) { // автобус
+				orgpArgs.transType = "bus";
+			} else if (orgpArgs.transType.toLowerCase().startsWith('тра') || orgpArgs.transType.toLowerCase().startsWith('nhf')) { // трамвай
+				orgpArgs.transType = "tram";
 			} else {
-				arbArg = arg.toLowerCase();
+				orgpArgs.transType = false;
+			}
+			console.log(orgpArgs);
+		} else {
+			// традиционная обработка аргументов
+			orgpArgs.transType = false;
+			orgpArgs.workMode = false;
+			orgpArgs.arbArg = false;
+			
+			for await (const arg of args) {
+				// тип транспорта (transport type)
+				if (arg.toLowerCase().startsWith('тро') || arg.toLowerCase().startsWith('nhj')) { // троллейбус
+					orgpArgs.transType = "trolley";
+				} else if (arg.toLowerCase().startsWith('ав') || arg.toLowerCase().startsWith('fd')) { // автобус
+					orgpArgs.transType = "bus";
+				} else if (arg.toLowerCase().startsWith('тра') || arg.toLowerCase().startsWith('nhf')) { // трамвай
+					orgpArgs.transType = "tram";
+					
+				// режим работы (work mode)
+				} else if (arg.toLowerCase() === 'route' || arg.toLowerCase() === 'маршрут') {
+					orgpArgs.workMode = "byRoute";
+				} else if (arg.toLowerCase() === 'label' || arg.toLowerCase() === 'номер') {
+					orgpArgs.workMode = "byLabel";
+				} else if (arg.toLowerCase() === 'search' || arg.toLowerCase() === 'поиск') {
+					orgpArgs.workMode = "searchRoute";
+					
+				// любой иной произвольный аргумент (arbitrary argument)
+				} else {
+					orgpArgs.arbArg = arg.toLowerCase();
+				}
 			}
 		}
-		if (workMode === "byRoute") {
-			await searchByRoute(arbArg, transType);
-		} else if (workMode === "byLabel") {
-			await searchByLabel(arbArg, transType);
-		} else if (workMode === "searchRoute") {
-			await searchRouteName(arbArg, transType);
+		
+		if (orgpArgs.workMode === "byRoute") {
+			await searchByRoute(orgpArgs.arbArg, orgpArgs.transType);
+		} else if (orgpArgs.workMode === "byLabel") {
+			await searchByLabel(orgpArgs.arbArg, orgpArgs.transType);
+		} else if (orgpArgs.workMode === "searchRoute") {
+			await searchRouteName(orgpArgs.arbArg, orgpArgs.transType);
 		} else {
 			let embed = new Discord.EmbedBuilder()
 			.setTitle('А че делать то?')
@@ -356,7 +554,6 @@ class Orgp {
 			await msg.reply({ embeds: [embed] });
 		}
 		return;
-		
 		
 		async function searchByRoute(routeName, transType) {
 			if (!routeName) {
@@ -473,7 +670,7 @@ class Orgp {
 				selectList = new Discord.StringSelectMenuBuilder()
 					.setCustomId(preCustomId + "_" + zipedLabels + "_lp")
 					.setPlaceholder('Получить больше инфы о...')
-					.setDisabled(false)
+					.setDisabled(true)
 				await labels.forEach((label) => {
 					selectList.addOptions({
 						label: label.substring(1),
@@ -538,39 +735,60 @@ class Orgp {
 				await msg.reply({ embeds: [embed] }); // запоминаем сообщение
 				return;
 			}
-			const searchResults = await searchRoute(approxName, type);
-			if (!type) {
-				type = "любой";
+			let loadingString;
+			if (Math.random() > 0.5) { // вероятость 50/50
+				loadingString = funnyLoadingStrings[Math.floor(Math.random() * (funnyLoadingStrings.length))]; // получаем рандомную смешнявку
 			} else {
-				type = readableType[type];
+				loadingString = funnyLoadingStrings[0] // получаем нормальную строку
 			}
+
+			let embed1 = new Discord.EmbedBuilder()
+				.setTitle('Веду поиск...')
+				.setColor(nek.config.basecolor)
+				.setDescription(loadingString)
+			const waitmsg = await msg.reply({ embeds: [embed1] }); // запоминаем сообщение
+			
+			let searchResults = await searchRoute(approxName, type, 0);
 			if (!searchResults || !searchResults[0]) {
 				let embed = new Discord.EmbedBuilder()
 					.setTitle('Маршрут не найден')
 					.setColor(nek.config.errorcolor)
 					.setDescription('Не найдено ни одного маршрута с похожим номером')
-				await msg.reply({ embeds: [embed] }); // запоминаем сообщение
+				await waitmsg.edit({ embeds: [embed] }); // запоминаем сообщение
 				return;
 			}
 			
-			let totalFound
+			let totalFound = searchResults.length;
 			if (searchResults.length === 20) {
-				totalFound = "20 или более";
-			} else {
-				totalFound = searchResults.length;
+				let embed1 = new Discord.EmbedBuilder()
+					.setTitle('Веду поиск...')
+					.setColor(nek.config.basecolor)
+					.setDescription(loadingString + " `Ещё немного...`")
+				await waitmsg.edit({ embeds: [embed1] }); // запоминаем сообщение
+				const anotherSearchResults = await searchRoute(approxName, type, 20) // пропускаем первые 20 маршрутов, т.к. мы их нашли выше, и ищем ещё
+				searchResults = [...searchResults, ...anotherSearchResults]
+				if (searchResults.length === 40) {
+					totalFound = "40 или более";
+				} else {
+					totalFound = searchResults.length;
+				}
 			}
-			
 			let routesList = "```\n";
 			for await (const route of searchResults) {
 				routesList += route.ShortName + " - " + readableType[route.TransportType] + "\n";
 			}
 			routesList += "```";
+			if (!type) {
+				type = "любой";
+			} else {
+				type = readableType[type];
+			}
 			let embed = new Discord.EmbedBuilder()
 				.setTitle('Поиск маршрута')
 				.setColor(nek.config.basecolor)
 				.setDescription("По запросу `" + approxName + "` среди типа `" + type + "` было найдено `" + totalFound + "` маршрутов:\n" + routesList +
 				'\nСоветуем для поиска всё таки воспользоватся [официальным сайтом](https://transport.orgp.spb.ru/routes)')
-			msg.reply({ embeds: [embed] });
+			waitmsg.edit({ embeds: [embed] });
 			return;
 		}
 	}
