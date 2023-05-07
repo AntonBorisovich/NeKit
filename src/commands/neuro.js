@@ -87,7 +87,7 @@ const txt2img = async (nek, client, interaction) => {
 	const positivePrompts = oldEmbed.fields[0].value.replace(/`/g, '');
 	let negativePrompts = oldEmbed.fields[1].value.replace(/`/g, '');
 	if (!negativePrompts) negativePrompts = "mutation, watermark";
-	if (!interaction.message.channel.nsfw) negativePrompts = negativePrompts + ", (nsfw, explicit, questionable, pussy, breasts, nipple, areolae:1.2)"
+	if (!interaction.message.channel.nsfw) negativePrompts = negativePrompts + ", (nsfw, explicit, questionable, pussy, breasts, nipple, areolae, cum, pubic hair, penis:1.1)"
 	const steps = oldEmbed.fields[2].value.replace(/`/g, '')
 	let embed = new Discord.EmbedBuilder()
 		.setTitle('Генерация')
@@ -176,7 +176,10 @@ const txt2img = async (nek, client, interaction) => {
 	return;
 }
 const changeModel = async (nek, client, interaction) => {
-	if (workingNow.id) {
+	if (!workingNow.id) {
+		workingNow = {timestamp: Date.now(), id: interaction.message.id, step: 1};
+	}
+	if (workingNow.id !== interaction.message.id) {
 		let embed = new Discord.EmbedBuilder()
 			.setTitle('Подождите')
 			.setColor(nek.config.errorcolor)
@@ -184,7 +187,7 @@ const changeModel = async (nek, client, interaction) => {
 		await interaction.message.edit({ embeds: [embed], components: [] }); // запоминаем сообщение
 		return;
 	}
-	workingNow = {timestamp: Date.now(), id: interaction.message.id, step: workingNow.step+1}
+	workingNow = {timestamp: Date.now(), id: interaction.message.id, step: workingNow.step+1};
 	const currentStep = workingNow.step // запоминаем текущий шаг, что бы потом отследить АФК
 	let oldEmbed = interaction.message.embeds[0];
 	const oldComponents = interaction.message.components;
@@ -349,7 +352,7 @@ class Neuro {
 				{name: 'Негативные промты', value: '`' + negativePrompts + '`'},
 				{name: 'Кол-во шагов (steps)', value: '`' + steps + '`'}
 			)
-			.setFooter({text: 'Осталось лишь выбрать модель, и начнется генерация. Вы можете отменить её в любой момент'})	
+			.setFooter({text: 'Сейчас выбрана модель ' + sdModelsNames[sdModelsNames.length - 1] + '. Вы можете выбрать другую, но это займёт время'})	
 		const selectList = new Discord.StringSelectMenuBuilder()
 			.setCustomId(msg.author.id + "_0_" + this.name + "_m")
 			.setPlaceholder('Модель')
