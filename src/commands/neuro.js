@@ -4,7 +4,7 @@ const http = require("http");
 const PChostname = "192.168.10.67";
 const PCport = "7860";
 const defBatch = 1;
-const defSteps = 25;
+const defSteps = 16;
 const width = 512;
 const height = 512;
 
@@ -86,7 +86,7 @@ const txt2img = async (nek, client, interaction) => {
 	const oldComponents = interaction.message.components;
 	const positivePrompts = oldEmbed.fields[0].value.replace(/`/g, '');
 	let negativePrompts = oldEmbed.fields[1].value.replace(/`/g, '');
-	if (!negativePrompts) negativePrompts = "mutation, watermark";
+	if (!negativePrompts) negativePrompts = "mutation, watermark, bad hands, bad fingers, bad anatomy, crooked fingers, crooked hands, ugly hands, ugly fingers, twisted fingers, non-anatomical fingers";
 	if (!interaction.message.channel.nsfw) negativePrompts = negativePrompts + ", (nsfw, explicit, questionable, pussy, breasts, nipple, areolae, cum, pubic hair, penis:1.1)"
 	const steps = oldEmbed.fields[2].value.replace(/`/g, '')
 	let embed = new Discord.EmbedBuilder()
@@ -251,15 +251,15 @@ class Neuro {
 		this.category = "img";
 		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
 		
-		this.args = "";
-		this.advargs = "";
-		this.argsdesc = "";
+		this.args = "<промпты>";
+		this.advargs = "<промпты>";
+		this.argsdesc = "<промпты> - слова на английском, перечисленные через запятую. Это такие тэги, которые дают понять нейронке, что вы от неё хотите. Например `1girl` рисует одну девушку, а `1girl, red eyes` рисует девушку с красными глазами";
         this.desc = "нейромазня";
         this.advdesc = "Это, наверное, самая эксперементальная команда. С помощью компьютера разработчика (если он включён) можно сгенерировать нейромазню.\n" +
 		"Всякие ссылки на то, что помогает этому работать:\n"+
 		"-[stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) - API, с помощью которого можно через бота опросить комп\n"+
 		"-[Anything V5](https://civitai.com/models/9409) - модель AnythingV5\n"+
-		"-[Anything V3](https://civitai.com/models/9409) - модель AnythingV3, совместимая с LoRA широ\n"+
+		"-[Anything V3](https://civitai.com/models/9409) - модель AnythingV3, совместимая с LoRA\n"+
 		"-[Waifu Diffusion 1.5 beta 2](https://huggingface.co/waifu-diffusion/wd-1-5-beta2) - модель WD15\n";
         this.name = "neuro";
     }
