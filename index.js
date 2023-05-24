@@ -138,9 +138,10 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 // === НАЧАЛО РАБОТЫ === //
 nek.log('BOOTLOADER', 'Bootloader started!'); // информируем, что загрузчик успешно задал основные функции
 
-nek.launch_time = Date.now();  // запоминаем время запуска
-const os = require('os'); 		// подключение библиотеки получение данных о системе (os)
-const fs = require("fs"); 		// подключение библиотеки файловой системы (fs)
+
+nek.launch_time = Date.now(); // запоминаем время запуска
+const os = require('os'); // подключение библиотеки получение данных о системе (os)
+const fs = require("fs"); // подключение библиотеки файловой системы (fs)
 
 // Загрузка информации о загрузчике (метаданные)
 nek.log('BOOTLOADER', 'Reading meta...', false, true); // информируем, что начинаем читать файлы метаданных
@@ -169,46 +170,36 @@ try {
 }
 
 
-// === АРГУМЕНТЫ === //
-const args = process.argv.slice(2);
-if (args[0]) { // если есть хоть какой-нибудь аргумент, то начать их проверять
-	for (const arg of args) { 
-	
-		// TODO: Переделать так, что бы можно было считать любой аргумент, который имеет '=' и записать в конфиг, а не только заданные тут.
-		if (arg.startsWith('--soc=')) { // соц. сеть
-			nek.config.socfile = arg.slice(6); // записать новый socfile
-			nek.log('ARGUMENT', 'Forcing socfile to: ' + nek.config.socfile, 'cyan'); // выводим, что режим работы форсирован
-			break;
+// === ОБРАБОТКА АРГУМЕНТОВ === //
+const nekargs = process.argv.slice(2);
+
+for (let param of nekargs) { // смотрим на параметры
+	param = param.replace('--', ''); // убрать --
+	param = param.split('='); // разбить на массив через знак =
+	console.log(param);
+	if (!param[1]) { // если параметр не равняется ничему (предположительно boolean)
+		if (nek[param[0]]) { // если параметр есть в переменной nek
+			nek[param[0]] = true; // записать новое значение
+			nek.log("ARGUMENTS", "Setting nek argument '" + param[0] + "' to 'true'"); // уведомить
+		} else { // иначе записать как пользовательский пара
+			nek.config[param[0]] = nekargs[param[0]]; // записать новое значение
+			nek.log("ARGUMENTS", "Setting user argument '" + param[0] + "' to 'true'"); // уведомить
 		}
-		if (arg.startsWith('--color=')) { // цвет
-			nek.config.basecolor = arg.slice(8); // записать новый basecolor
-			nek.log('ARGUMENT', 'Forcing basecolor to: ' + nek.config.basecolor, 'cyan'); // выводим, что цвет форсирован
-			break;
-		}
-		if (arg.startsWith('--prefix=')) { // префикс
-			nek.config.prefix = arg.slice(9); // записать новый prefix
-			nek.log('ARGUMENT', 'Forcing prefix to: ' + nek.config.prefix, 'cyan'); // выводим, что префикс форсирован
-			break;
-		}
-		if (arg.startsWith('--name=')) { // имя
-			nek.config.prefix = arg.slice(7); // записать новый name
-			nek.log('ARGUMENT', 'Forcing name to: ' + nek.config.name, 'cyan'); // выводим, что имя форсировано
-			break;
-		}
-		
-		if (arg.startsWith('--noDmErrors')) { // не пытаться отправлять ошибки в лс
-			nek.config.noDmErrors = true;
-			nek.log('ARGUMENT', 'Forcing not to send errors in dm', 'cyan');
-			break;
-		}
-		if (arg.startsWith('--noActivity')) { // не пытаться отправлять ошибки в лс
-			nek.config.noActivity = true;
-			nek.log('ARGUMENT', 'Forcing not to set discord status and activity', 'cyan');
-			break;
+	} else {
+		if (nek[param[0]]) { // если параметр есть в переменной nek
+			nek[param[0]] = param.slice(1).join(""); // записать новое значение
+			nek.log("ARGUMENTS", "Setting nek argument '" + param[0] + "' to '" + nek[param[0]] + "'"); // уведомить
+		} else { // иначе записать как пользовательский пара
+			nek.config[param[0]] = param.slice(1).join(""); // записать новое значение
+			nek.log("ARGUMENTS", "Setting user argument '" + param[0] + "' to '" + nek.config[param[0]] + "'"); // уведомить
 		}
 	}
+	
+	// TODO: Запихнуть все конфиги в nek.config, а то сейчас одни параметры в nek, другие в nek.config
+	
 }
 
+// === ПРОВЕРКА КОНФИГА	===
 // Проверяем установлен ли режим работы
 if (!nek.config.socfile) { // если ничего не задано
 	nek.log("ERROR", "No socfile provided! Falling to discord", "yellow"); // информируем о смене socfile-а

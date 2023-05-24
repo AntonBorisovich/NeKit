@@ -2,7 +2,7 @@
 title Bot Launcher
 cls
 :boot
-node index.js
+node index.js --debug --prefix=FFFFFF
 echo.
 set proceed=""
 :choice
