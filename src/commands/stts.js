@@ -163,7 +163,7 @@ class Stts {
 			fullPic: "https://media.tenor.com/jUMex_rdqPwAAAAd/among-us-twerk.gif",
 			previewPic: "https://media.tenor.com/h99LQHUExJIAAAAd/19dollar-fortnite-card-among-us.gif",
 			id: 228668,
-			comments: -1
+			comments: 2
 		}
 	}
 }

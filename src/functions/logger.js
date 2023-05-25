@@ -35,6 +35,31 @@ class Logger {
 		
 	}
 	
+	// Неизвестная ошибка
+	// - Работа бота продолжается
+	// - Разработчику отправляется полный лог события
+	async uncaughtError(nek, client, error){ // error - стандартный global object Error
+		nek.log("ERROR", "Got uncaught error!", "red");
+		console.error(error);
+		nek.log("LOGGER", "Sending report...", "gray", true);
+		try {
+			const botowner = await client.users.fetch(nek.config.developers[0]);
+			let embed = new Discord.EmbedBuilder()
+				.setTitle(':x: Uncaught error!')
+				.setColor(nek.config.errorcolor)
+				.setDescription('```\n' + error.name + ": " + error.message + "\n>" + error.stack.slice(0, error.stack.indexOf('\n')) + '\n```')
+				.setTimestamp()
+			await botowner.send({ embeds: [embed] });
+		} catch(e) {
+			nek.simplelog("ERR!", "red");
+			nek.log("LOGGER","Failed to send report!", "red");
+			console.error(e)
+			return;
+		}
+		nek.simplelog("SENT!", "green");
+		return;
+	}
+	
 	// Фатальная ошибка
 	// - Идет окончание всех работ и последующее завершение процесса
 	// - Пользователю отправляется id его сообщения, краткое описание ошибки и профиль разработчика

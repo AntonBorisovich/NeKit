@@ -39,7 +39,7 @@ class TwoFA {
 		switch(args[1].toLowerCase()) { // проверяем аргумент
 			case 'create': // создать новый секрет
 				if (!nek.config.Secret2FA) { // если не задан секрет
-					if (msg.author.id !== nek.config.developers[0]) { // если автор сообщения не разработчик, то забить
+					if (!nek.config.developers.includes(msg.author.id)) { // если автор сообщения не разработчик, то забить
 						let embed = new Discord.EmbedBuilder()
 							.setTitle('Новый 2FA')
 							.setColor(nek.config.basecolor)
@@ -80,7 +80,7 @@ class TwoFA {
 				}
 				
 				// обновление секрета
-				if (msg.author.id !== nek.config.developers[0]) { // если автор сообщения не разработчик, то забить
+				if (!nek.config.developers.includes(msg.author.id)) { // если автор сообщения не разработчик, то забить
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
@@ -178,7 +178,7 @@ class TwoFA {
 				}
 				break;
 			case 'bypass':
-				if (msg.author.id !== nek.config.developers[0]) { // если автор сообщения не разработчик, то забить
+				if (!nek.config.developers.includes(msg.author.id)) { // если автор сообщения не разработчик, то забить
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
@@ -216,7 +216,7 @@ class TwoFA {
 						.setColor(nek.config.basecolor)
 						.setDescription("Обход 2FA кода теперь выключен")
 					await msg.reply({ embeds: [embed] });
-					Bypass2FA === false;
+					Bypass2FA = false;
 					break;
 				}
 				if (Bypass2FA === true) {

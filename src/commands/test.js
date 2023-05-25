@@ -1,5 +1,4 @@
 const Discord = require("discord.js");
-const numco = require("numco");
 
 class Test {
     constructor(nek){
@@ -18,26 +17,10 @@ class Test {
 
     run(nek, client, msg, args){
 		args.shift();
-		const compressed = numco.compress(args);
-		const decompressed = numco.decompress(compressed);
-		let embed = new Discord.EmbedBuilder() // составляем embed
-			.setTitle('тесто') // заголовок
-			.setDescription("Без сжатия (" + args.join(" ").length + " симв.)\n```\n" +
-			args.join(" ") + "\n```\n" +
-			"После сжатия numco (" + compressed.length + " симв.)\n```\n" +
-			compressed + "\n```\n" +
-			"После разжатия (" + decompressed.join(" ").length + " симв.)\n```\n"+
-			decompressed.join(" ") + "\n```")
-			.setColor(nek.config.basecolor) // цвет
-		msg.reply({ embeds: [embed] }); // отправить
-		
-		return;
-		
-		return;
+		msg.channel.send(false);
 		const stts = nek.commands.get('stts');
 		const trans = stts.searchOneTransportFull();
-		
-		embed = new Discord.EmbedBuilder() // составляем embed
+		let embed = new Discord.EmbedBuilder() // составляем embed
 			.setTitle("№" + trans.label) // заголовок
 			.setDescription(
 				"**[" + trans.model + "](" + trans.links.vehicle + ")**\n" +

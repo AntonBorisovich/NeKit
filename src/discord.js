@@ -21,10 +21,9 @@ class discord {
 	
     async start(nek){ // ОБЫЧНОЕ НАЧАЛО РАБОТЫ
 		const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав, она будет использоватся далее
-		
+		const logger = nek.functions.get("logger"); // получаем функцию логирования
 		process.on('uncaughtException', function (err) {
-			nek.log('ERROR', 'Got uncaught error! Check log below:', 'red');
-			console.error(err);
+			logger.uncaughtError(nek, client, err);
 		});
 		
 		// ФУНКЦИЯ ПЕРЕПОДКЛЮЧЕНИЯ
@@ -173,7 +172,7 @@ class discord {
 					await msg.reply({ embeds: [embed] });
 					return;
 				}
-				if (!Pass2FA === 'bypassed') args.pop(); // удаляем код 2FA из аргументов после успешной проверки
+				if (Pass2FA !== 'bypassed') args.pop(); // удаляем код 2FA из аргументов после успешной проверки
 			}
 			
 			timeouts.set(msg.author.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
