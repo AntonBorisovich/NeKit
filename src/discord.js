@@ -278,7 +278,7 @@ class discord {
 			timeouts.set(interaction.user.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
 			setTimeout(() => {
 				timeouts.delete(interaction.user.id); // удаляем из тайм-аута через 2 секунды
-			}, 3000);
+			}, 1500);
 			
 			works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
 			nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ')', 'gray');
