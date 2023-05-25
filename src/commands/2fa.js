@@ -1,10 +1,13 @@
 const twofactor = require("node-2fa");
 const Discord = require("discord.js");
+const fs = require("fs");
 let tempSecret2FA = false;
+let tempMessage2FA = false;
+let Bypass2FA = false;
 
 class TwoFA {
     constructor(nek){
-		this.version = '1.0'
+		this.version = '1.1';
 		//задать полученые значения для дальнейшего использования в коде команды
 		//this.nek = nek;
         //this.config = config;
@@ -16,18 +19,21 @@ class TwoFA {
         this.name = "2fa"; // имя команды
 		this.desc = "настройка 2FA"; // описание команды в общем списке команд
 		this.advdesc = "Настройка, обновление, проверка 2FA кода"; // описание команды в помоще по конкретной команде
-		this.args = ""; // аргументы в общем списке команд
-		this.argsdesc = ""; // описание аргументов в помоще по конкретной команде
-		this.advargs = ""; // аргументы в помоще по конкретной команде
+		this.args = "<операция>"; // аргументы в общем списке команд
+		this.argsdesc = // описание аргументов в помоще по конкретной команде
+		"`create` - создать новый ключ (секрет)\n" +
+		"`verify <код>` - проверить код\n" +
+		"`bypass <код>` - исполнять 2fa команды без кода (только в режиме debug)";
+		this.advargs = "<операция>"; // аргументы в помоще по конкретной команде
     }
 
-    run(nek, client, msg, args){
+    async run(nek, client, msg, args){
 		if (!args[1]) {
 			let embed = new Discord.EmbedBuilder()
 				.setTitle('2FA')
 				.setColor(nek.config.basecolor)
 				.setDescription("Без аргументов я ниче тебе сделать не могу. Можешь ввести " + nek.config.prefix + "help " + this.name + " для просмотра аргументов")
-			msg.reply({ embeds: [embed] });
+			await msg.reply({ embeds: [embed] });
 			return;
 		}
 		switch(args[1].toLowerCase()) { // проверяем аргумент
@@ -38,7 +44,7 @@ class TwoFA {
 							.setTitle('Новый 2FA')
 							.setColor(nek.config.basecolor)
 							.setDescription("Ключ (секрет) не задан. И вы не разработчик, так что повлиять на это не можете.")
-						msg.reply({ embeds: [embed] });
+						await msg.reply({ embeds: [embed] });
 						break;
 					}
 					
@@ -51,7 +57,7 @@ class TwoFA {
 						.setTitle('Новый 2FA')
 						.setColor(nek.config.basecolor)
 						.setDescription("Вам был отправлен ключ (секрет), так как он не был задан ранее. Для его закрепления вам нужно ввести `" + nek.config.prefix + this.name + " verify <код>`")
-					msg.reply({ embeds: [embed] });
+					await msg.reply({ embeds: [embed] });
 					// сообщение в лс
 					embed = new Discord.EmbedBuilder() 
 						.setTitle('Новый 2FA')
@@ -59,10 +65,9 @@ class TwoFA {
 						.setDescription(
 							"Прикинь, этот текст здесь потому, что первую строку мессенджеры не хотят прятать в спойлер и спокойно показывают секретный код всем желающим.\n" +
 							"И всё таки вот твой код:\n\n" +
-							"Ключ - ||" + tempSecret2FA.secret + "||\n\n" +
-							"Можно и нажать - [Открыть 2FA приложение](" + tempSecret2FA.uri + ")"
-						)
-					msg.author.send({ embeds: [embed], files:[{attachment: tempSecret2FA.qr, name: "SPOILER_chart.png"}] });
+							"Ключ - ||" + tempSecret2FA.secret + "||"
+						);
+					tempMessage2FA = await msg.author.send({ embeds: [embed], files:[{attachment: tempSecret2FA.qr, name: "SPOILER_chart.png"}] });
 					break;
 				}
 				if (!args[2]) {
@@ -70,7 +75,7 @@ class TwoFA {
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
 						.setDescription("Введите `" + nek.config.prefix + this.name + " create <код>` что бы заново сгенерировать ключ (секрет)")
-					msg.reply({ embeds: [embed] });
+					await msg.reply({ embeds: [embed] });
 					break;
 				}
 				
@@ -79,8 +84,8 @@ class TwoFA {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
-						.setDescription("Секрет может обновить только разработчик")
-					msg.reply({ embeds: [embed] });
+						.setDescription("Секрет может обновить только разработчик");
+					await msg.reply({ embeds: [embed] });
 					break;
 				}
 				if (this.Check2FA(nek, args[2])) { // если код подошёл
@@ -90,8 +95,8 @@ class TwoFA {
 					let embed = new Discord.EmbedBuilder() 
 						.setTitle('Новый 2FA')
 						.setColor(nek.config.basecolor)
-						.setDescription("Вам был отправлен новый ключ (секрет). Для его закрепления вам нужно ввести `" + nek.config.prefix + this.name + " verify <код>`")
-					msg.reply({ embeds: [embed] });
+						.setDescription("Вам был отправлен новый ключ (секрет). Для его закрепления вам нужно ввести `" + nek.config.prefix + this.name + " verify <код>`");
+					await msg.reply({ embeds: [embed] });
 
 					// сообщение в лс
 					embed = new Discord.EmbedBuilder() 
@@ -100,10 +105,9 @@ class TwoFA {
 						.setDescription(
 							"Прикинь, этот текст здесь потому, что первую строку мессенджеры не хотят прятать в спойлер и спокойно показывают секретный код всем желающим.\n" +
 							"И всё таки вот твой код:\n\n" +
-							"Ключ - ||" + tempSecret2FA.secret + "||\n\n" +
-							"Можно и нажать - [Открыть 2FA приложение](" + tempSecret2FA.uri + ")"
-						)
-					msg.author.send({ embeds: [embed], files:[{attachment: tempSecret2FA.qr, name: "SPOILER_chart.png"}] });
+							"Ключ - ||" + tempSecret2FA.secret + "||"
+						);
+					tempMessage2FA = await msg.author.send({ embeds: [embed], files:[{attachment: tempSecret2FA.qr, name: "SPOILER_chart.png"}] });
 					break;
 				}
 				break;
@@ -112,67 +116,49 @@ class TwoFA {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
-						.setDescription("А чё проверять то?")
-					msg.reply({ embeds: [embed] });
+						.setDescription("Укажите код");
+					await msg.reply({ embeds: [embed] });
 					break;
 				}
 				if (tempSecret2FA?.secret) { // если есть временный секрет (т.е. надо его подтвердить)
 					const Pass2FA = twofactor.verifyToken(tempSecret2FA.secret, args[2]); // проверяем подходит ли код к временному секрету
 					if (Pass2FA?.delta === 0) { // если всё сошлось
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('2FA')
-							.setColor(nek.config.basecolor)
-							.setDescription("Проверка пройдена. Новый ключ (секрет) записан")
-						msg.reply({ embeds: [embed] });
-						const updsecret = nek.Update2FASecret(tempSecret2FA.secret); // пытаемся записать новый секрет в файл
+						const file = require('../config/secrets.json'); // читаем json
+						file.Secret2FA = tempSecret2FA.secret; // добавляем/изменяем секрет
+						fs.writeFile('./src/config/secrets.json', JSON.stringify(file, null, '\t'), (err) => { // пишем новый файл
+							if (err) throw(err);
+						});
+						nek.config.Secret2FA = tempSecret2FA.secret;
+						
 						tempSecret2FA = false; // убираем временный токен
-						if (updsecret !== 'done') { // если чето пошло не так, то сообщить об этом
-							let embed = new Discord.EmbedBuilder()
-								.setTitle('2FA')
-								.setColor(nek.config.basecolor)
-								.setDescription("Произошла ошибка записи нового секрета. Попробуйте ещё раз")
-							msg.reply({ embeds: [embed] });
-							break;
-						}
 						
 						// TODO: Удаление сообщения после записи нового секрета
 						
-						//tempMsg.delete();
-						//tempMsg.channel.send({content: '*Сообщение удалено. Ключей не будет*'});
-						//tempMsg = false;
+						tempMessage2FA.channel.send({content: '*Тут было сообщение с ключом (секретом) 2FA, но мы его удалили, так как ключ (секрет) был применён*'});
+						tempMessage2FA.delete();
+						tempMessage2FA = false;
+						
+						let embed = new Discord.EmbedBuilder()
+							.setTitle('2FA')
+							.setColor(nek.config.basecolor)
+							.setDescription("Новый ключ (секрет) записан");
+						await msg.reply({ embeds: [embed] });
 						break;
 					}
 					
-					// другие сообщения на случай, если код не подходит или просрочен.
-					if (Pass2FA?.delta === -1) {
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('2FA')
-							.setColor(nek.config.basecolor)
-							.setDescription("Неа. Опоздал. Код больше не подходит. Попробуй ещё раз.")
-						msg.reply({ embeds: [embed] });
-						break;
-					} else if (Pass2FA?.delta === 1) {
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('2FA')
-							.setColor(nek.config.basecolor)
-							.setDescription("Ты из будущего что ли? Этот код пока не подходит. Подожди и попробуй ещё раз.")
-						msg.reply({ embeds: [embed] });
-						break;
-					} else {
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('2FA')
-							.setColor(nek.config.basecolor)
-							.setDescription("Код не подошёл. Попробуй ещё раз.")
-						msg.reply({ embeds: [embed] });
-						break;
-					}
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Код не подошёл. Попробуй ещё раз")
+					await msg.reply({ embeds: [embed] });
+					break;
 				}
 				if (!nek.config.Secret2FA) {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
-						.setDescription("ам. пук среньк. где секрет то?")
-					msg.reply({ embeds: [embed] });
+						.setDescription("Ключ (секрет) не указан. Попробуйте создать его через `" + nek.config.prefix + this.name + " create`")
+					await msg.reply({ embeds: [embed] });
 					break;
 				}
 				if (this.Check2FA(nek, args[2])) {
@@ -180,14 +166,106 @@ class TwoFA {
 						.setTitle('2FA')
 						.setColor(nek.config.basecolor)
 						.setDescription("Верный код")
-					msg.reply({ embeds: [embed] });
+					await msg.reply({ embeds: [embed] });
 					break;
 				} else {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.errorcolor)
-						.setDescription("Неа. Код не подошёл")
-					msg.reply({ embeds: [embed] });
+						.setDescription("Код не подошёл")
+					await msg.reply({ embeds: [embed] });
+					break;
+				}
+				break;
+			case 'bypass':
+				if (msg.author.id !== nek.config.developers[0]) { // если автор сообщения не разработчик, то забить
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Только разработчик может включить обход 2FA кода")
+					await msg.reply({ embeds: [embed] });
+					break;
+				}
+				if (!nek.config.debug) { // если автор сообщения не разработчик, то забить
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Только в debug режиме можно включить обход 2FA кода")
+					await msg.reply({ embeds: [embed] });
+					break;
+				}
+				if (!args[2]) { // если нету никакого кода, то забить
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Укажите код")
+					await msg.reply({ embeds: [embed] });
+					break;
+				}
+				if (args[2].toLowerCase() === "disable") {
+					if (Bypass2FA === false) {
+						let embed = new Discord.EmbedBuilder()
+							.setTitle('2FA')
+							.setColor(nek.config.basecolor)
+							.setDescription("Обход 2FA кода уже выключен")
+						await msg.reply({ embeds: [embed] });
+						break;
+					}
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Обход 2FA кода теперь выключен")
+					await msg.reply({ embeds: [embed] });
+					Bypass2FA === false;
+					break;
+				}
+				if (Bypass2FA === true) {
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.basecolor)
+						.setDescription("Обход 2FA кода уже включен. Введите `" + nek.config.prefix + this.name + " bypass disable` для его отключеня")
+					await msg.reply({ embeds: [embed] });
+					break;
+				}
+				if (this.Check2FA(nek, args[2])) {
+					if (Bypass2FA === false) {
+						Bypass2FA = args[2];
+						let embed = new Discord.EmbedBuilder()
+							.setTitle('2FA')
+							.setColor(nek.config.basecolor)
+							.setDescription("Для подтверждения включения обхода 2FA кода введите другой валидный код. То есть просто подождите секунд 30 и введите новый код снова")
+						await msg.reply({ embeds: [embed] });
+						break;
+					} else if (Bypass2FA !== true && Bypass2FA !== false) { // если значение отличное от true или false, т.е. предположительно там первый код
+						if (args[2] === Bypass2FA) {
+							let embed = new Discord.EmbedBuilder()
+								.setTitle('2FA')
+								.setColor(nek.config.errorcolor)
+								.setDescription("Подождите немного и введите отличный от первого код")
+							await msg.reply({ embeds: [embed] });
+							break;
+						}
+						let embed = new Discord.EmbedBuilder()
+							.setTitle('2FA')
+							.setColor(nek.config.basecolor)
+							.setDescription("Обход 2FA включен. Теперь любой код будет считаться валидным. Не забудьте его выключить через `" + nek.config.prefix + this.name + " bypass disable` или перезагрузку бота")
+						await msg.reply({ embeds: [embed] });
+						Bypass2FA = true;
+					} else {
+						let embed = new Discord.EmbedBuilder()
+							.setTitle('2FA')
+							.setColor(nek.config.errorcolor)
+							.setDescription("Что-то пошло не так")
+						await msg.reply({ embeds: [embed] });
+						break;
+					}
+				} else {
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('2FA')
+						.setColor(nek.config.errorcolor)
+						.setDescription("Код не подошёл. Попробуйте заново")
+					await msg.reply({ embeds: [embed] });
+					if (Bypass2FA !== true) Bypass2FA = false;
 					break;
 				}
 				break;
@@ -201,6 +279,9 @@ class TwoFA {
 		}
 		if (twofactor.verifyToken(nek.config.Secret2FA, code)?.delta === 0) {
 			return true;
+		}
+		if (Bypass2FA === true && nek.config.debug === true) {
+			return 'bypassed';
 		}
 		return false;
 	}

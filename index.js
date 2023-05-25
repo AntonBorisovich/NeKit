@@ -134,10 +134,8 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 	}
 }
 
-
 // === НАЧАЛО РАБОТЫ === //
 nek.log('BOOTLOADER', 'Bootloader started!'); // информируем, что загрузчик успешно задал основные функции
-
 
 nek.launch_time = Date.now(); // запоминаем время запуска
 const os = require('os'); // подключение библиотеки получение данных о системе (os)
@@ -174,29 +172,30 @@ try {
 const nekargs = process.argv.slice(2);
 
 for (let param of nekargs) { // смотрим на параметры
-	param = param.replace('--', ''); // убрать --
-	param = param.split('='); // разбить на массив через знак =
-	console.log(param);
-	if (!param[1]) { // если параметр не равняется ничему (предположительно boolean)
-		if (nek[param[0]]) { // если параметр есть в переменной nek
-			nek[param[0]] = true; // записать новое значение
-			nek.log("ARGUMENTS", "Setting nek argument '" + param[0] + "' to 'true'"); // уведомить
-		} else { // иначе записать как пользовательский пара
-			nek.config[param[0]] = nekargs[param[0]]; // записать новое значение
-			nek.log("ARGUMENTS", "Setting user argument '" + param[0] + "' to 'true'"); // уведомить
+	if (param.startsWith('--')) {
+		param = param.replace('--', ''); // убрать --
+		param = param.split('='); // разбить на массив через знак =
+		if (!param[1]) { // если параметр не равняется ничему (предположительно boolean)
+			if (nek[param[0]]) { // если параметр есть в переменной nek
+				nek[param[0]] = true; // записать новое значение
+				nek.log("ARGUMENTS", "Setting nek config '" + param[0] + "' to 'true'"); // уведомить
+			} else { // иначе записать как пользовательский пара
+				nek.config[param[0]] = true; // записать новое значение
+				nek.log("ARGUMENTS", "Setting user config '" + param[0] + "' to 'true'"); // уведомить
+			}
+		} else {
+			if (nek[param[0]]) { // если параметр есть в переменной nek
+				nek[param[0]] = param.slice(1).join(""); // записать новое значение
+				nek.log("ARGUMENTS", "Setting nek config '" + param[0] + "' to '" + nek[param[0]] + "'"); // уведомить
+			} else { // иначе записать как пользовательский пара
+				nek.config[param[0]] = param.slice(1).join(""); // записать новое значение
+				nek.log("ARGUMENTS", "Setting user config '" + param[0] + "' to '" + nek.config[param[0]] + "'"); // уведомить
+			}
 		}
 	} else {
-		if (nek[param[0]]) { // если параметр есть в переменной nek
-			nek[param[0]] = param.slice(1).join(""); // записать новое значение
-			nek.log("ARGUMENTS", "Setting nek argument '" + param[0] + "' to '" + nek[param[0]] + "'"); // уведомить
-		} else { // иначе записать как пользовательский пара
-			nek.config[param[0]] = param.slice(1).join(""); // записать новое значение
-			nek.log("ARGUMENTS", "Setting user argument '" + param[0] + "' to '" + nek.config[param[0]] + "'"); // уведомить
-		}
+		nek.log("ARGUMENTS", "Unknown argument '" + param + "'", 'yellow');
 	}
-	
 	// TODO: Запихнуть все конфиги в nek.config, а то сейчас одни параметры в nek, другие в nek.config
-	
 }
 
 // === ПРОВЕРКА КОНФИГА	===
@@ -243,25 +242,6 @@ try {
 	process.exit(1); // выходим
 }
 
-// === ЗАДАЁМ ФУНКЦИИ ВСЯКИЕ ДЛЯ ИСПОЛЬЗОВАНИЯ В БУДУЩЕМ === //
-
-nek.Update2FASecret = (secret) => { // проверка 2FA кода
-	const twofactor = require("node-2fa");
-	const fileName = './src/config/secrets.json';
-	const file = require(fileName); // читаем json
-	file.Secret2FA = secret; // добавляем/изменяем секрет
-	try {
-		fs.writeFile(fileName, JSON.stringify(file, null, '\t'), (err) => { // пишем новый файл
-			if (err) throw(err);
-		});
-		nek.config.Secret2FA = secret
-	} catch (e) {
-		return e;
-	}
-	return 'done';
-}
-
-
 // === ЧТЕНИЕ ФУНКЦИЙ И КОМАНД: ЗАДАЁМ ФУНКЦИИ === //
 
 // Чтение функций
@@ -277,11 +257,13 @@ function loadFunctions() {
 				const fncPrototype = require("./src/functions/"+fileName); // читаем файл
 				const func = new fncPrototype(nek); // вытаскиваем из файла функцию
 				nek.functions.set(func.name, func); // пишем фунцкию в мапу
+				if (nek.config.debug) nek.log("DEBUG", "Loaded " + func.name);
 			}
 		} catch(e) {
 			funcErrs.push({file: file, error: e});
 		}
 	}
+	
 	return funcErrs;
 }
 // Чтение команд
@@ -297,6 +279,7 @@ function loadCommands() {
 				const cmdPrototype = require("./src/commands/"+fileName); // читаем файл
 				const command = new cmdPrototype(nek); // вытаскиваем из файла функцию
 				nek.commands.set(command.name, command); // пишем команду в мапу
+				if (nek.config.debug) nek.log("DEBUG", "Loaded " + command.name);
 			}
 		} catch(e) {
 			commErrs.push({file: file, error: e});

@@ -173,7 +173,7 @@ class discord {
 					await msg.reply({ embeds: [embed] });
 					return;
 				}
-				args.pop(); // удаляем код 2FA из аргументов после успешной проверки
+				if (!Pass2FA === 'bypassed') args.pop(); // удаляем код 2FA из аргументов после успешной проверки
 			}
 			
 			timeouts.set(msg.author.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
