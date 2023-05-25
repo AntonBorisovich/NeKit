@@ -4,12 +4,13 @@
 // Хранить данные об инетрактивном элементе не в customId, а в специальной collection или map, которая будет хранить все данные о запросе (бортовые номера машин на маршруте, маршрут, данные о фотографии машины (если есть), карте и т.д.), поиск которых должен производться через id сообщения, отправленное ботом
 //  > Следствие пункта выше - перестать использовать алгоритм сжатия numco
 
-
 // == Библиотеки
 const Discord = require("discord.js");
 const https = require("https");
 const StaticMaps = require('staticmaps');
-const numco = require("numco");
+
+// == Переменные
+let requests = new Map(); // карта, где хранятся запросы (типо по ключу (id сообщения) можно получить объект {msg: msg, info: {всякая инфа})
 
 // == Константы
 // координаты (bbox), в пределах которых нужно искать машины
@@ -174,7 +175,7 @@ const getTransport = async (type, bbox) => {
 }
 
 // == Обработка интерактивных элементов (кнопок и списков)
-const pageGeo = async (nek, client, interaction) => {
+const pageMap = async (nek, client, interaction) => {
 	//console.log(interaction.values)
 	// получаем 
 	const valueArgs = interaction.values[0].split("_"); // разделяем value по подстрочникам
@@ -260,7 +261,7 @@ const pagePhoto = async (nek, client, interaction) => {
 		.setLabel('Фото')
 		.setStyle(Discord.ButtonStyle.Primary)
 		.setDisabled(true)
-	const geo = new Discord.ButtonBuilder()
+	const map = new Discord.ButtonBuilder()
 		.setCustomId(customId.splice(-1, 1) + "_bg")
 		.setLabel('Местоположение')
 		.setStyle(Discord.ButtonStyle.Secondary)
@@ -273,7 +274,7 @@ const pagePhoto = async (nek, client, interaction) => {
 	
 	// создаем строки интерактивных элементов
 	const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
-	const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, geo, update);
+	const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, map, update);
 
 	await interaction.message.edit({ embeds: [embed], components: [listRow, buttonsRow] });
 	
@@ -688,7 +689,7 @@ class Orgp {
 				.setLabel('Фото')
 				.setStyle(Discord.ButtonStyle.Primary)
 				.setDisabled(true)
-			const geo = new Discord.ButtonBuilder()
+			const map = new Discord.ButtonBuilder()
 				.setCustomId(preCustomId + "_bg")
 				.setLabel('Местоположение')
 				.setStyle(Discord.ButtonStyle.Primary)
@@ -701,7 +702,7 @@ class Orgp {
 			
 			// создаем строки интерактивных элементов
 			const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
-			const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, geo, update);
+			const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, map, update);
 			
 			await waitmsg.edit({ embeds: [embed], components: [listRow, buttonsRow] });
 			
@@ -789,9 +790,9 @@ class Orgp {
 	async interaction(nek, client, interaction){
 		const customId = interaction.customId.split("_")
 		console.log(customId)
-		if (customId[3].substring(1) === "g"){ // geo
+		if (customId[3].substring(1) === "m"){ // map
 			await interaction.deferUpdate();
-			await pageGeo(nek, client, interaction);
+			await pageMap(nek, client, interaction);
 			return;
 		}
 		if (customId[3].substring(1) === "p"){ // photo

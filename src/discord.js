@@ -71,7 +71,7 @@ class discord {
 		// ПОСЛЕ ВХОДА
 		client.once(Discord.Events.ClientReady, async () => { // когда залогинились
 			nek.log("DISCORD", "Logged in as " + client.user.tag, "cyan"); // залогинились как *имя пользователя*
-			nek.log("READY", `Total launch time: ${((Date.now() - nek.launch_time) / 1000 )}s`); // логируем что залогинились за n секунд с запуска бота
+			nek.log(" READY ", `Total launch time: ${((Date.now() - nek.launch_time) / 1000 )}s`, "green"); // логируем что залогинились за n секунд с запуска бота
 			if (!nek.config.noActivity) {
 				client.user.setStatus('online'); // статус невидимки
 				client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
@@ -81,7 +81,7 @@ class discord {
 			let embed = new Discord.EmbedBuilder()
 				.setTitle('Logged in')
 				.setColor(nek.config.basecolor)
-				.setDescription(nek.fullname + " is ready to work!\n\nBootloader ver: `" + nek.version + "`\n" + this.name + " ver: `" + this.version + "`")
+				.setDescription(nek.config.fullname + " is ready to work!\n\nBootloader ver: `" + nek.config.version + "`\n" + this.name + " ver: `" + this.version + "`")
 				.setTimestamp()
 			const botowner = await client.users.fetch(nek.config.developers[0]); // ищем разработчика по id
 			await botowner.send({ embeds: [embed] }); // отправляем разрабу

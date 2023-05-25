@@ -141,21 +141,6 @@ nek.launch_time = Date.now(); // запоминаем время запуска
 const os = require('os'); // подключение библиотеки получение данных о системе (os)
 const fs = require("fs"); // подключение библиотеки файловой системы (fs)
 
-// Загрузка информации о загрузчике (метаданные)
-nek.log('BOOTLOADER', 'Reading meta...', false, true); // информируем, что начинаем читать файлы метаданных
-try { 
-	const sysconf = require('./src/config/bootmeta.json'); // читаем файл метаданных
-	nek.codename = sysconf.codename; // пишем кодовое имя программы
-	nek.fullname = sysconf.fullname; // пишеи читаемое имя программы
-	nek.version = sysconf.version; // пишем версию загрузчика
-	nek.simplelog('OK!', 'green'); // информируем, что метаданные успешно считаны
-	//nek.log('BOOTLOADER', 'Bootloader meta: ' + nek.fullname + ' (' + nek.codename + ') / Version: ' + nek.version + ' / Commands version: ' + nek.apiver); // для проверки выводим методанные
-} catch(e) { // если словили ошибку
-	nek.simplelog('ERR!', 'red'); // всё хреново
-	console.error(e); // выводим ошибку
-	process.exit(1); // выходим
-}
-
 // Загрузка пользовательских настроек (конфига)
 nek.log('BOOTLOADER', 'Reading config...', false, true); // информируем, что начинаем читать конфиг
 try {
@@ -167,69 +152,71 @@ try {
 	process.exit(1); // выходим
 }
 
+// Загрузка информации о загрузчике (метаданные)
+nek.log('BOOTLOADER', 'Reading meta...', false, true); // информируем, что начинаем читать файлы метаданных
+try { 
+	const metaconf = require('./src/config/bootmeta.json'); // читаем файл метаданных
+	nek.config.codename = metaconf.codename; // пишем кодовое имя программы
+	nek.config.fullname = metaconf.fullname; // пишеи читаемое имя программы
+	nek.config.version = metaconf.version; // пишем версию загрузчика
+	nek.simplelog('OK!', 'green'); // информируем, что метаданные успешно считаны
+	//nek.log('BOOTLOADER', 'Bootloader meta: ' + nek.fullname + ' (' + nek.codename + ') / Version: ' + nek.version + ' / Commands version: ' + nek.apiver); // для проверки выводим методанные
+} catch(e) { // если словили ошибку
+	nek.simplelog('ERR!', 'red'); // всё хреново
+	console.error(e); // выводим ошибку
+	process.exit(1); // выходим
+}
 
 // === ОБРАБОТКА АРГУМЕНТОВ === //
-const nekargs = process.argv.slice(2);
-
-for (let param of nekargs) { // смотрим на параметры
+for (let param of process.argv.slice(2)) { // смотрим на параметры
 	if (param.startsWith('--')) {
 		param = param.replace('--', ''); // убрать --
 		param = param.split('='); // разбить на массив через знак =
 		if (!param[1]) { // если параметр не равняется ничему (предположительно boolean)
 			if (nek[param[0]]) { // если параметр есть в переменной nek
 				nek[param[0]] = true; // записать новое значение
-				nek.log("ARGUMENTS", "Setting nek config '" + param[0] + "' to 'true'"); // уведомить
+				nek.log("ARGUMENTS", "Setting nek config '" + param[0] + "' to 'true'", "magenta"); // уведомить
 			} else { // иначе записать как пользовательский пара
 				nek.config[param[0]] = true; // записать новое значение
-				nek.log("ARGUMENTS", "Setting user config '" + param[0] + "' to 'true'"); // уведомить
+				nek.log("ARGUMENTS", "Setting user config '" + param[0] + "' to 'true'", "magenta"); // уведомить
 			}
 		} else {
 			if (nek[param[0]]) { // если параметр есть в переменной nek
 				nek[param[0]] = param.slice(1).join(""); // записать новое значение
-				nek.log("ARGUMENTS", "Setting nek config '" + param[0] + "' to '" + nek[param[0]] + "'"); // уведомить
+				nek.log("ARGUMENTS", "Setting nek config '" + param[0] + "' to '" + nek[param[0]] + "'", "magenta"); // уведомить
 			} else { // иначе записать как пользовательский пара
 				nek.config[param[0]] = param.slice(1).join(""); // записать новое значение
-				nek.log("ARGUMENTS", "Setting user config '" + param[0] + "' to '" + nek.config[param[0]] + "'"); // уведомить
+				nek.log("ARGUMENTS", "Setting user config '" + param[0] + "' to '" + nek.config[param[0]] + "'", "magenta"); // уведомить
 			}
 		}
 	} else {
 		nek.log("ARGUMENTS", "Unknown argument '" + param + "'", 'yellow');
 	}
-	// TODO: Запихнуть все конфиги в nek.config, а то сейчас одни параметры в nek, другие в nek.config
 }
 
 // === ПРОВЕРКА КОНФИГА	===
-// Проверяем установлен ли режим работы
-if (!nek.config.socfile) { // если ничего не задано
-	nek.log("ERROR", "No socfile provided! Falling to discord", "yellow"); // информируем о смене socfile-а
-	nek.config.socfile = 'discord';
-}
-
-// Проверяем есть ли префикс
-if (nek.config.prefix) { // если есть префикс
-	nek.prefix = nek.config.prefix;
-} else {
+if (!nek.config.prefix) { 
 	nek.log("ERROR", "No prefix provided!", "red"); // информируем об ошибке
 	process.exit(1); // выходим
 }
- 
-// Проверяем есть ли цвет бота
-if (nek.config.basecolor) { // если есть цвет
-	nek.basecolor = nek.config.basecolor;
-} else {
+if (!nek.config.socfile) {
+	nek.log("ERROR", "No socfile provided!", "red"); // информируем о смене socfile-а
+	process.exit(1); // выходим
+}
+if (!nek.config.basecolor) {
 	nek.log("ERROR", "No basecolor provided! Falling to \"#FFFFFF\"", "yellow"); // информируем о смене цвета
-	nek.basecolor = "#FFFFFF"; // меняем цвет
+	nek.config.basecolor = "#FFFFFF"; // меняем цвет
 }
-
-// Проверяем есть ли имя
-if (nek.config.name) { // если есть имя
-	nek.name = nek.config.name;
-} else {
+if (!nek.config.errorcolor) {
+	nek.log("ERROR", "No errorcolor provided! Falling to \"#FF0000\"", "yellow"); // информируем о смене цвета
+	nek.config.basecolor = "#FF0000"; // меняем цвет
+}
+if (!nek.config.name) { // если есть имя
 	nek.log("WARNING", "No custom name provided! Falling to \"NeKit\"", "yellow"); // информируем о смене имени
-	nek.name = "NeKit"; // меняем имя
+	nek.config.name = "NeKit"; // меняем имя
 }
 
-// Загрузка пользовательских настроек (конфига)
+// Загрузка конфиденциальных параметров
 nek.log('BOOTLOADER', 'Reading secrets...', false, true); // информируем, что начинаем читать секреты и токены
 try {
 	const secrets = require('./src/config/secrets.json'); // читаем файл конфига
@@ -257,7 +244,6 @@ function loadFunctions() {
 				const fncPrototype = require("./src/functions/"+fileName); // читаем файл
 				const func = new fncPrototype(nek); // вытаскиваем из файла функцию
 				nek.functions.set(func.name, func); // пишем фунцкию в мапу
-				if (nek.config.debug) nek.log("DEBUG", "Loaded " + func.name);
 			}
 		} catch(e) {
 			funcErrs.push({file: file, error: e});
@@ -279,7 +265,6 @@ function loadCommands() {
 				const cmdPrototype = require("./src/commands/"+fileName); // читаем файл
 				const command = new cmdPrototype(nek); // вытаскиваем из файла функцию
 				nek.commands.set(command.name, command); // пишем команду в мапу
-				if (nek.config.debug) nek.log("DEBUG", "Loaded " + command.name);
 			}
 		} catch(e) {
 			commErrs.push({file: file, error: e});
@@ -290,8 +275,8 @@ function loadCommands() {
 
 
 // === ЧТЕНИЕ ФУНКЦИЙ И КОМАНД: РАБОТАЕМ === //
-
 let totalErrors = []; // массив кратких ошибок. Нужен, что бы в дальнейшем выпукнуть краткий лог в лс разработчику
+
 // Функции
 let nekFuncs = loadFunctions(); // читаем функции
 if (!nekFuncs[0]) { // если нет ни единой ошибки, то всё ок

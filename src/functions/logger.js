@@ -1,37 +1,49 @@
 const Discord = require("discord.js");
 
-class Error {
+class Logger {
     constructor(nek){
-        this.name = "error";
-		this.version = "1.0"
+        this.name = "logger";
+		this.version = "dev"
     }
+	
+	// Объект message имеет следующую структуру
+	// {
+	//		title: "заголовок",
+	//		message: "сообщение",
+	//		color: "hex цвет",	
+	// }
+	
+	// Кастомное сообщение разработчикам
+	// -
+	async devMsg(nek, client, message){ // message (string) - текст сообщения
+		
+	}
 	
 	// Обычная ошибка пользователя
 	// - Работа бота продолжается
 	// - Пользователю отправляется краткое описание его ошибки
 	// - Никакие логи не отправляются разработчику
-    userError(nek, client, msg, err){ 
+    async userError(nek, client, msg, message){
 		
 	}
-	
 	
 	// Ошибка кода
 	// - Работа бота продолжается
 	// - Пользователю отправляется id его сообщения, краткое описание ошибки и профиль разработчика
 	// - Разработчику отправляется полный лог события
-	codeError(nek, client, msg, err){
+	async codeError(nek, client, msg, error){ // error - стандартный global object Error
 		
 	}
 	
 	// Фатальная ошибка
-	// - Идет окончание всех процессов (мапа works), после лога разрабу происходит закрытие бота
+	// - Идет окончание всех работ и последующее завершение процесса
 	// - Пользователю отправляется id его сообщения, краткое описание ошибки и профиль разработчика
 	// - Разработчику отправляется полный лог события
-	fatalError(nek, client, msg, err){
+	async fatalError(nek, client, msg, error){ // error - стандартный global object Error
 		
 	}
 	
 }
 
-module.exports = Error;
+module.exports = Logger;
 

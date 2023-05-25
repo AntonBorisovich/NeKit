@@ -1,6 +1,6 @@
 {
   "name": "nekit",
-  "version": "1.0.0",
+  "version": "dev",
   "description": "new kitsune. just a bot for discord",
   "main": "index.js",
   "scripts": {
@@ -21,11 +21,9 @@
   "homepage": "https://github.com/AntonBorisovich/NeKit#readme",
   "dependencies": {
     "canvas": "^2.11.2",
-    "commander": "^10.0.1",
-    "discord.js": "^14.10.2",
+    "discord.js": "^14.11.0",
     "md5": "^2.3.0",
     "node-2fa": "^2.0.3",
-    "numco": "^1.0.0",
     "pet-pet-gif": "^1.0.9",
     "staticmaps": "^1.12.0"
   }
