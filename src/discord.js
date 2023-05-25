@@ -216,77 +216,87 @@ class discord {
 		// Пример:
 		//   929443921069752331_0_help_Guide0
 		client.on(Discord.Events.InteractionCreate, async (interaction) => {
-				if (interaction.isModalSubmit()) return; // тихо игнорим modal (они должны обрабатываться в коде команды
-				
-				if (!interaction.isButton() && !interaction.isStringSelectMenu()) { // если не кнопка и не список
-					nek.log('INTERACTION', 'Got unknown interaction', 'gray');
-					return;
-				}
-				if (!interaction.customId) {
-					nek.log('INTERACTION', 'customId not found', 'gray');
-					return;
-				}
-				
-				const customId = interaction.customId.split("_"); // получаем customid как массив
-				const msg = interaction.message;
-				
-				if (!customId[0].startsWith(interaction.user.id) && customId[1] == "0") { // если юзер с другим id и кнопку нельзя нажимать другим
-					nek.log('INTERACTION', 'User is trying to press on someone else\'s interaction');
-					interaction.reply({ content: 'Ты не можешь взаимодействовать с этим. Только изначальный автор сообщения может сделать это.', ephemeral: true});
-					return;
-				};
-				const comm = nek.commands.get(customId[2]);
-				if (!comm) {
-					nek.log('INTERACTION', 'Unknown command!');
-					return;
-				}
-				
-				const startTime = Date.now(); // запоминаем когда начали работать над командой
-				//const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав
-				let sendMsgPerm = "SEND_MESSAGES"; // проверять право, которое даст нам печатать в КАНАЛАХ
-				if (msg.channel.type === Discord.ChannelType.GuildForum || msg.channel.type === Discord.ChannelType.GuildPublicThread || msg.channel.type === Discord.ChannelType.GuildPrivateThread) {
-					sendMsgPerm = "SEND_MESSAGES_IN_THREADS"; // если сообщение в ветке, то проверять право, которое даст нам печатать в ВЕТКАХ
-				}
-				const missingPerms = permsFunc.checkPerms(nek, msg, [sendMsgPerm, ...comm.perms]); // проверяем права и запоминаем, какие отсутствуют
-				if (missingPerms[0]) { // если есть хоть одно отсутствующее право, то информируем пользователя
-					nek.log('MESSAGE', 'Missing permission(s) [' + missingPerms.join(', ') + '] for "' + comm.name + '" (' + msg.id + ')', 'gray');
-					if (!permsFunc.checkPerms(nek, msg, [sendMsgPerm, "EMBED_LINKS"])[0]) { // если можно печатать с эмбедами, то отправить ошибку эмбедом
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('Нету нужных прав')
-							.setColor(nek.config.errorcolor)
-							.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\n[Что значат эти буквы?](https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags)')
-						await interaction.reply({ embeds: [embed] });
-						return;
-					} else if (!permsFunc.checkPerms(nek, msg, [sendMsgPerm])[0]) { // если вообще можно печатать, то отправить ошибку текстом
-						await interaction.reply({content: '**ОШИБКА:**\nДля работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\nЧто значат эти буквы?: https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags'});
-						return;
-					} else { // если нельзя печатать, то отправить ошибку в лс
-						let embed = new Discord.EmbedBuilder()
-							.setTitle('Нету нужных прав')
-							.setColor(nek.config.errorcolor)
-							.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\nСообщите об этом владельцу сервера!')
-						await interaction.author.send({ embeds: [embed] });
-						return;
-					}
-				}
-				
-				works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
-				nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ')', 'gray');
-				try {
-					await comm.interaction(nek, client, interaction); // запускаем команду
-				} catch(e) {
-					console.error(e);
-					let embed = new Discord.EmbedBuilder()
-						.setTitle('Ошибка')
-						.setColor(nek.config.errorcolor)
-						.setDescription("Произошла неизвестная ошибка")
-						.setFooter({text: e.name + ": " + e.message})
-					interaction.message.reply({ embeds: [embed] });
-					return;
-				}
-				works.delete(interaction.id); // удаляем, т.к. мы закончили работу
-				nek.log('INTERACTION', 'Done with "' + comm.name + '" (' + interaction.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
+			if (interaction.isModalSubmit()) return; // тихо игнорим modal (они должны обрабатываться в коде команды)
+
+			if (!interaction.isButton() && !interaction.isStringSelectMenu()) { // если не кнопка и не список
+				nek.log('INTERACTION', 'Got unknown interaction', 'gray');
 				return;
+			}
+			if (!interaction.customId) {
+				nek.log('INTERACTION', 'customId not found', 'gray');
+				return;
+			}
+			
+			if (timeouts.get(interaction.user.id)) { // если пользователь в списке тайм-аута, то игнор
+				nek.log('INTERACTION', 'User is on cooldown', 'gray');
+				interaction.reply({ content: 'Воу. Погоди немного', ephemeral: true});
+				return;
+			}
+			
+			const customId = interaction.customId.split("_"); // получаем customid как массив
+			const msg = interaction.message;
+			
+			if (!customId[0].startsWith(interaction.user.id) && customId[1] == "0") { // если юзер с другим id и кнопку нельзя нажимать другим
+				nek.log('INTERACTION', 'User is trying to press on someone else\'s interaction');
+				interaction.reply({ content: 'Ты не можешь взаимодействовать с этим. Только изначальный автор сообщения может сделать это.', ephemeral: true});
+				return;
+			};
+			const comm = nek.commands.get(customId[2]);
+			if (!comm) {
+				nek.log('INTERACTION', 'Unknown command!');
+				return;
+			}
+			
+			const startTime = Date.now(); // запоминаем когда начали работать над командой
+			//const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав
+			let sendMsgPerm = "SEND_MESSAGES"; // проверять право, которое даст нам печатать в КАНАЛАХ
+			if (msg.channel.type === Discord.ChannelType.GuildForum || msg.channel.type === Discord.ChannelType.GuildPublicThread || msg.channel.type === Discord.ChannelType.GuildPrivateThread) {
+				sendMsgPerm = "SEND_MESSAGES_IN_THREADS"; // если сообщение в ветке, то проверять право, которое даст нам печатать в ВЕТКАХ
+			}
+			const missingPerms = permsFunc.checkPerms(nek, msg, [sendMsgPerm, ...comm.perms]); // проверяем права и запоминаем, какие отсутствуют
+			if (missingPerms[0]) { // если есть хоть одно отсутствующее право, то информируем пользователя
+				nek.log('MESSAGE', 'Missing permission(s) [' + missingPerms.join(', ') + '] for "' + comm.name + '" (' + msg.id + ')', 'gray');
+				if (!permsFunc.checkPerms(nek, msg, [sendMsgPerm, "EMBED_LINKS"])[0]) { // если можно печатать с эмбедами, то отправить ошибку эмбедом
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('Нету нужных прав')
+						.setColor(nek.config.errorcolor)
+						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\n[Что значат эти буквы?](https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags)')
+					await interaction.reply({ embeds: [embed] });
+					return;
+				} else if (!permsFunc.checkPerms(nek, msg, [sendMsgPerm])[0]) { // если вообще можно печатать, то отправить ошибку текстом
+					await interaction.reply({content: '**ОШИБКА:**\nДля работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\nЧто значат эти буквы?: https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags'});
+					return;
+				} else { // если нельзя печатать, то отправить ошибку в лс
+					let embed = new Discord.EmbedBuilder()
+						.setTitle('Нету нужных прав')
+						.setColor(nek.config.errorcolor)
+						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\nСообщите об этом владельцу сервера!')
+					await interaction.author.send({ embeds: [embed] });
+					return;
+				}
+			}
+			timeouts.set(interaction.user.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
+			setTimeout(() => {
+				timeouts.delete(interaction.user.id); // удаляем из тайм-аута через 2 секунды
+			}, 3000);
+			
+			works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
+			nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ')', 'gray');
+			try {
+				await comm.interaction(nek, client, interaction); // запускаем команду
+			} catch(e) {
+				console.error(e);
+				let embed = new Discord.EmbedBuilder()
+					.setTitle('Ошибка')
+					.setColor(nek.config.errorcolor)
+					.setDescription("Произошла неизвестная ошибка")
+					.setFooter({text: e.name + ": " + e.message})
+				interaction.message.reply({ embeds: [embed] });
+				return;
+			}
+			works.delete(interaction.id); // удаляем, т.к. мы закончили работу
+			nek.log('INTERACTION', 'Done with "' + comm.name + '" (' + interaction.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
+			return;
 		});
     }
 	
