@@ -1,4 +1,6 @@
 const Discord = require("discord.js");
+const fs = require("fs");
+const { createCanvas, loadImage } = require('canvas');
 
 class Test {
     constructor(nek){
@@ -15,9 +17,32 @@ class Test {
 		this.advargs = "advargs"; // аргументы в помоще по конкретной команде
     }
 
-    run(nek, client, msg, args){
+    async run(nek, client, msg, args){
 		args.shift();
-		msg.channel.send(false);
+		
+		return;
+		const types = ['bus', 'tram', 'trolley']
+		const sizes = [0,15,30,45,60,75,90,105,120,135,150,165,180,195,210,225,240,255,270,285,300,315,330,345,360]
+		for (const type of types) {
+			console.log('starting processing type "' + type + '"')
+			for (const size of sizes) {
+				const canvas = createCanvas(64, 64);
+				const ctx = canvas.getContext('2d');
+				const imgurl = './src/assets/orgp/' + type + '_rotatable.png'
+				const avatar = await loadImage(imgurl);
+				ctx.translate(canvas.width/2,canvas.height/2);
+				ctx.rotate(size*Math.PI/180);
+				ctx.drawImage(avatar, -32, -32);
+				
+				const buffer = canvas.toBuffer('image/png');
+				await fs.writeFile(type + "_" + size + ".png", buffer, (err) => { // пишем новый файл
+					if (err) throw(err);
+				});
+				console.log('saved as "' + type + '_' + size + '.png"');
+			}
+		}
+		
+		return;
 		const stts = nek.commands.get('stts');
 		const trans = stts.searchOneTransportFull();
 		let embed = new Discord.EmbedBuilder() // составляем embed

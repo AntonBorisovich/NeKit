@@ -11,7 +11,7 @@ const client = new Discord.Client({
 
 let works = new Map(); // мапа, где хрянятся все команды, которые всё ещё обрабатываются
 let msgTimeouts = new Map(); // мапа, где хрянятся пользователи с кулдауном по сообщениям
-let interactionTimeouts = new Map(); // мапа, где хрянятся пользователи с кулдауном по кнопкам
+//let interactionTimeouts = new Map(); // мапа, где хрянятся пользователи с кулдауном по кнопкам
 let ignoreNewMsg = false; // если true, то новые команды не будут исполнятся
 
 class discord {
@@ -228,11 +228,11 @@ class discord {
 				return;
 			}
 			
-			if (interactionTimeouts.get(interaction.user.id)) { // если пользователь в списке тайм-аута, то игнор
-				nek.log('INTERACTION', 'User is on cooldown', 'gray');
-				interaction.reply({ content: 'Воу. Погоди немного', ephemeral: true});
-				return;
-			}
+			// if (interactionTimeouts.get(interaction.user.id)) { // если пользователь в списке тайм-аута, то игнор
+				// nek.log('INTERACTION', 'User is on cooldown', 'gray');
+				// interaction.reply({ content: 'Воу. Погоди немного', ephemeral: true});
+				// return;
+			// }
 			
 			const customId = interaction.customId.split("_"); // получаем customid как массив
 			const msg = interaction.message;
@@ -276,10 +276,10 @@ class discord {
 					return;
 				}
 			}
-			interactionTimeouts.set(interaction.user.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
-			setTimeout(() => {
-				interactionTimeouts.delete(interaction.user.id); // удаляем из тайм-аута через 2 секунды
-			}, 1500);
+			//interactionTimeouts.set(interaction.user.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
+			//setTimeout(() => {
+			//	interactionTimeouts.delete(interaction.user.id); // удаляем из тайм-аута через 2 секунды
+			//}, 1500);
 			
 			works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
 			nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ')', 'gray');
