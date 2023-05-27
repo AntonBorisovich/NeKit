@@ -27,13 +27,7 @@ const readableType = { // форматирование в читабельный
 	'bus': 'автобус',
 	'tram': 'трамвай'
 }
-const modeToRus = {
-	'label': 'н',
-	'route': 'м',
-	'search': 'п',
-}
 const dirToBlock = ["🟦", "🟧"]; // а это вообще надо?
-
 
 // == Основной код. Обработка запроса пользователя и установка информации о команде
 class Orgp {
@@ -202,7 +196,7 @@ argsProcess.gui = async (nek, msg, args) => { // обработка аргуме
 			await response.delete(); // удаляем сообщение
 			
 			return [ // возвращаем такой массив аргументов, будто пользователь ввёл
-				modeToRus[buttonConfirmation.customId],
+				buttonConfirmation.customId,
 				modalConfirmation.fields.getTextInputValue('type'),
 				modalConfirmation.fields.getTextInputValue('arb')
 			];
@@ -239,11 +233,11 @@ argsProcess.cli = async (args) => { // обработка текстовых а�
 			argsObject.transType = "tram";
 			
 		// режим работы (work mode)
-		} else if (arg.toLowerCase().startsWith('м')) {
+		} else if (arg.toLowerCase().startsWith('м') || arg == "route") {
 			argsObject.workMode = "byRoute";
-		} else if (arg.toLowerCase().startsWith('н')) {
+		} else if (arg.toLowerCase().startsWith('н') || arg == "label") {
 			argsObject.workMode = "byLabel";
-		} else if (arg.toLowerCase().startsWith('п')) {
+		} else if (arg.toLowerCase().startsWith('п') || arg == "search") {
 			argsObject.workMode = "searchRoute";
 			
 		// любой иной произвольный аргумент (arbitrary argument)

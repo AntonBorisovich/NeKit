@@ -10,7 +10,8 @@ const client = new Discord.Client({
 });
 
 let works = new Map(); // мапа, где хрянятся все команды, которые всё ещё обрабатываются
-let timeouts = new Map(); // мапа, где хрянятся пользователи с кулдауном
+let msgTimeouts = new Map(); // мапа, где хрянятся пользователи с кулдауном по сообщениям
+let interactionTimeouts = new Map(); // мапа, где хрянятся пользователи с кулдауном по кнопкам
 let ignoreNewMsg = false; // если true, то новые команды не будут исполнятся
 
 class discord {
@@ -101,7 +102,7 @@ class discord {
 			if (!comm) return; // если такая команда не найдена - игнор
 			
 			// КОМАНДА НАЙДЕНА
-			if (timeouts.get(msg.author.id)) { // если пользователь в списке тайм-аута, то игнор
+			if (msgTimeouts.get(msg.author.id)) { // если пользователь в списке тайм-аута, то игнор
 				nek.log('MESSAGE', 'User is on cooldown. Ignoring', 'gray');
 				return;
 			}
@@ -175,9 +176,9 @@ class discord {
 				if (Pass2FA !== 'bypassed') args.pop(); // удаляем код 2FA из аргументов после успешной проверки
 			}
 			
-			timeouts.set(msg.author.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
+			msgTimeouts.set(msg.author.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
 			setTimeout(() => {
-				timeouts.delete(msg.author.id); // удаляем из тайм-аута через 2 секунды
+				msgTimeouts.delete(msg.author.id); // удаляем из тайм-аута через 2 секунды
 			}, 2000);
 			
 			works.set(msg.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
@@ -227,7 +228,7 @@ class discord {
 				return;
 			}
 			
-			if (timeouts.get(interaction.user.id)) { // если пользователь в списке тайм-аута, то игнор
+			if (interactionTimeouts.get(interaction.user.id)) { // если пользователь в списке тайм-аута, то игнор
 				nek.log('INTERACTION', 'User is on cooldown', 'gray');
 				interaction.reply({ content: 'Воу. Погоди немного', ephemeral: true});
 				return;
@@ -275,9 +276,9 @@ class discord {
 					return;
 				}
 			}
-			timeouts.set(interaction.user.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
+			interactionTimeouts.set(interaction.user.id, {timestamp: startTime}); // добавляем пользователя в тайм-аут
 			setTimeout(() => {
-				timeouts.delete(interaction.user.id); // удаляем из тайм-аута через 2 секунды
+				interactionTimeouts.delete(interaction.user.id); // удаляем из тайм-аута через 2 секунды
 			}, 1500);
 			
 			works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
