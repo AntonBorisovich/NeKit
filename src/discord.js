@@ -21,11 +21,15 @@ class discord {
     }
 	
     async start(nek){ // ОБЫЧНОЕ НАЧАЛО РАБОТЫ
-		const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав, она будет использоватся далее
-		const logger = nek.functions.get("logger"); // получаем функцию логирования
 		process.on('uncaughtException', function (err) {
 			logger.uncaughtError(nek, client, err);
 		});
+		if (nek.config.debug) {
+			client.on('debug', async (info) => {nek.log('DEBUG', info, 'yellow')});
+			client.on('warn', async (info) => {nek.log('WARN', info, 'yellow')});
+		}
+		const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав, она будет использоватся далее
+		const logger = nek.functions.get("logger"); // получаем функцию логирования
 		
 		// ФУНКЦИЯ ПЕРЕПОДКЛЮЧЕНИЯ
 		nek.reconnect = () => { // функция переподключения
