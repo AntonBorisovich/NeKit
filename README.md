@@ -4,7 +4,7 @@ New Kitsune. Тупо бот для дискорда
 ## Установка
 - Установите [Node.js®](https://nodejs.org/) (v16.9.0 и выше) 
 - Установите canvas [по инструкции](https://github.com/Automattic/node-canvas/wiki) для вашей ОС
-- Установите шрифты [Lobster](https://fonts.google.com/specimen/Lobster) и [Impact](https://learn.microsoft.com/en-us/typography/font-list/impact) (можно взять из папки шрифтов любой винды начиная с Windows 98)
+- Установите шрифты [Lobster](https://fonts.google.com/specimen/Lobster) и [Impact](https://learn.microsoft.com/en-us/typography/font-list/impact) (Impact можно взять из папки шрифтов любой винды начиная с Windows 98)
 - Установить все модули прописав `npm i` в директории с package.json
 - Укажите токен вашего бота в src/config/secrets.json, который вы можете найти на [Портале Разработчиков Discord](https://discord.com/developers/)
 - Откройте start.bat на Windows или пропишите `node index` на других системах в директории с index.js для запуска.
