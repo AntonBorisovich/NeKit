@@ -2,7 +2,7 @@ const Discord = require("discord.js");
 
 class React {
     constructor(nek){
-		
+		this.version = "1.0 (old)";
 		this.category = "utility";
 		
 		this.perms = ["EMBED_LINKS", "ADD_REACTIONS"];

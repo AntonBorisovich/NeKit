@@ -1,8 +1,50 @@
 const Discord = require("discord.js");
 const https = require("https");
 
+const nsfwTags = [
+	"waifu_nsfw",
+	"neko_nsfw",
+	"trap",
+	"blowjob"
+];
+
+const sfwTags = [
+	"waifu",
+	"neko",
+	"shinobu",
+	"megumin",
+	"bully",
+	"cuddle",
+	"cry",
+	"hug",
+	"awoo",
+	"kiss",
+	"lick",
+	"pat",
+	"smug",
+	"bonk",
+	"yeet",
+	"blush",
+	"smile",
+	"wave",
+	"highfive",
+	"handhold",
+	"nom",
+	"bite",
+	"glomp",
+	"slap",
+	"kill",
+	"kick",
+	"happy",
+	"wink",
+	"poke",
+	"dance",
+	"cringe"
+];
+
 class Waifu {
     constructor(nek){
+		this.version = "1.1";
 		this.category = "img";
 
 		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
@@ -41,95 +83,72 @@ class Waifu {
 		"dance     | \n"+
 		"cringe    | \n"+
 		"-= SFW =- | -= NSFW =-\n"+
-		"```"
+		"```";
 		this.advargs = "<тег>";
-        this.desc = "кидает пикчи с waifu.pics";
+        this.desc = "ищет пикчи на waifu.pics";
         this.advdesc = "Отправляет пикчи по тегу с сайта Waifu.pics, в том числе и NSFW";
         this.name = "waifu";
     }
     async run(nek, client, msg, args){
-		var executed = false
-		
-		var nsfw = ["waifu_nsfw" , "neko_nsfw", "trap", "blowjob"]
-		await nsfw.forEach(tag => {
-			if (args[1]) {
-				if (tag.toLowerCase() == args[1].toLowerCase()) {
-					executed = true
-					if (msg.channel.nsfw) {
-						let tagg = args[1].replace(/_nsfw/g, "")
-						var url = "https://api.waifu.pics/nsfw/" + tagg;
-						https.get(url, function(res) {
-							var body = "";
-
-							res.on("data", function(chunk) {
-								body += chunk;
-							});
-	 
-							res.on("end", function() {
-								let embed = new Discord.EmbedBuilder()
-								embed.setTitle(client.user.username + ' - waifu')
-								embed.setColor(`#F36B00`)
-								embed.setDescription(tag)
-								embed.setImage(body.replace(/\{\"url\"\:\"/g, "").replace(/\"/g, "").replace(/\}/g, ""))
-								msg.channel.send({ embeds: [embed] });;
-								return
-							});
-						}).on("error", function(e) {
-							return
-						});
-					} else {
-						let embed = new Discord.EmbedBuilder()
-						embed.setTitle(client.user.username + ' - Error')
-						embed.setColor(`#F00000`)
-						embed.setDescription("Этот тег можно использовать только в NSFW каналах!")
-						msg.channel.send({ embeds: [embed] });
-					}
-				}
-			}
-		})
-		var sfw = ["waifu", "neko", "shinobu", "megumin", "bully", "cuddle", "cry", "hug", "awoo", "kiss", "lick", "pat", "smug", "bonk", "yeet", "blush", "smile", "wave", "highfive", "handhold", "nom", "bite", "glomp", "slap", "kill", "kick", "happy", "wink", "poke", "dance", "cringe"]
-		await sfw.forEach(tag => {
-			if (args[1]) {
-				if (tag == args[1].toLowerCase()) {
-					executed = true
-					var url = "https://api.waifu.pics/sfw/" + tag;
-					https.get(url, function(res) {
-						var body = "";
-
-						res.on("data", function(chunk) {
-							body += chunk;
-						});
-	 
-						res.on("end", function() {
-							let embed = new Discord.EmbedBuilder()
-							embed.setTitle(client.user.username + ' - waifu')
-							embed.setColor(`#F36B00`)
-							embed.setDescription(tag)
-							embed.setImage(body.replace(/\{\"url\"\:\"/g, "").replace(/\"/g, "").replace(/\}/g, ""))
-							msg.channel.send({ embeds: [embed] });;
-							return
-						});
-					}).on("error", function(e) {
-						return
-					});
-				}
-			}
-		})
-		if (!executed) {
-			if (!args[1] || args[1] == "") {
-				let embed = new Discord.EmbedBuilder()
-				embed.setTitle(client.user.username + ' - Error')
-				embed.setColor(`#F00000`)
-				embed.setDescription("Ты не указал тег\n\nCписок тегов ты можешь посмотреть в " + nek.config.prefix + "help " + this.name)
-				msg.channel.send({ embeds: [embed] });;
-			} else {
-				let embed = new Discord.EmbedBuilder()
-				embed.setTitle(client.user.username + ' - Error')
-				embed.setColor(`#F00000`)
-				embed.setDescription("Тег не найден\n\nCписок тегов ты можешь посмотреть в " + nek.config.prefix + "help " + this.name)
-				msg.channel.send({ embeds: [embed] });;
-			}
+		if (!args[1]) {
+			const embed = new Discord.EmbedBuilder()
+				.setTitle('Не указан тег')
+				.setColor(nek.config.errorcolor)
+				.setDescription("Cписок тегов ты можешь посмотреть прописав `" + nek.config.prefix + "help " + this.name + "`");
+			await msg.reply({ embeds: [embed] });
+			return;
 		}
+		
+		let tag = args[1].toLowerCase();
+		let rating;
+		if (sfwTags.includes(tag)) {
+			rating = 'sfw';
+		} else if (nsfwTags.includes(tag)) {
+			if (!msg.channel.nsfw) {
+				const embed = new Discord.EmbedBuilder()
+					.setTitle('Непотребства!')
+					.setColor(nek.config.errorcolor)
+					.setDescription("Фотокарточки с этим тегом можно посмотреть только в NSFW каналах");
+				await msg.reply({ embeds: [embed] });
+				return;
+			}
+			rating = 'nsfw';
+		} else {
+			const embed = new Discord.EmbedBuilder()
+				.setTitle('Неизвестный тег')
+				.setColor(nek.config.errorcolor)
+				.setDescription("Cписок тегов ты можешь посмотреть прописав `" + nek.config.prefix + "help " + this.name + "`");
+			await msg.reply({ embeds: [embed] });
+			return;
+		}
+		
+
+		await https.get("https://api.waifu.pics/" + rating + "/" + tag, async (res) => {
+			let body = "";
+
+			res.on("data", async (chunk) => {
+				body += chunk;
+			});
+
+			res.on("end", async () => {
+				const embed = new Discord.EmbedBuilder()
+					.setTitle('waifu.pics')
+					.setColor(nek.config.basecolor)
+					.setDescription(tag)
+					.setImage(body.replace(/\{\"url\"\:\"/g, "").replace(/\"/g, "").replace(/\}/g, ""));
+				await msg.reply({ embeds: [embed] });
+				return;
+			});
+		}).on("error", async (e) => {
+			console.error(e);
+			const embed = new Discord.EmbedBuilder()
+				.setTitle('Неизвестная ошибка')
+				.setColor(nek.config.errorcolor)
+				.setDescription(e.name + ": " + e.message);
+			await msg.reply({ embeds: [embed] });
+			return;
+		});
+		return;
 	}
 }
 

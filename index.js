@@ -41,31 +41,31 @@ nek.log = async (state, msg, color, noBrake) => {
 	switch(color) {
 		case 'black':
 			color = "\x1b[30m"; // FgBlack
-			break
+			break;
 		case 'red':
 			color = "\x1b[31m"; // FgRed
-			break
+			break;
 		case 'green':
 			color = "\x1b[32m"; // FgGreen
-			break
+			break;
 		case 'yellow':
 			color = "\x1b[33m"; // FgYellow
-			break
+			break;
 		case 'blue':
 			color = "\x1b[34m"; // FgBlue
-			break
+			break;
 		case 'magenta':
 			color = "\x1b[35m"; // FgMagenta
-			break
+			break;
 		case 'cyan':
 			color = "\x1b[36m"; // FgCyan
-			break
+			break;
 		case 'gray':
 			color = "\x1b[90m"; // FgGray
-			break
+			break;
 		default:
 			color = "\x1b[0m"; // reset the color
-			break
+			break;
 	}
 
 	let date = new Date();
@@ -101,31 +101,31 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 	switch(color) {
 		case 'black':
 			color = "\x1b[30m"; // FgBlack
-			break
+			break;
 		case 'red':
 			color = "\x1b[31m"; // FgRed
 			break
 		case 'green':
 			color = "\x1b[32m"; // FgGreen
-			break
+			break;
 		case 'yellow':
 			color = "\x1b[33m"; // FgYellow
-			break
+			break;
 		case 'blue':
 			color = "\x1b[34m"; // FgBlue
-			break
+			break;
 		case 'magenta':
 			color = "\x1b[35m"; // FgMagenta
-			break
+			break;
 		case 'cyan':
 			color = "\x1b[36m"; // FgCyan
-			break
+			break;
 		case 'gray':
 			color = "\x1b[90m"; // FgGray
-			break
+			break;
 		default:
 			color = "\x1b[0m"; // reset the color
-			break
+			break;
 	}
 	if (!noBrake) { // если мы не хотим печатать на той же строке
 		console.log(color + msg + '\x1b[0m');
@@ -137,7 +137,8 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 // === НАЧАЛО РАБОТЫ === //
 nek.log('BOOTLOADER', 'Bootloader started!'); // информируем, что загрузчик успешно задал основные функции
 
-nek.launch_time = Date.now(); // запоминаем время запуска
+nek.launchTime = Date.now(); // запоминаем время запуска
+nek.errorsCount = 0;
 const os = require('os'); // подключение библиотеки получение данных о системе (os)
 const fs = require("fs"); // подключение библиотеки файловой системы (fs)
 
@@ -317,10 +318,10 @@ try {
 	nek.log('BOOTLOADER', 'Loaded ' + social.name + ' [' + social.version + ']');
 	if (totalErrors[0]) { // если есть ошибки, то 
 		if (nek.config.noDmErrors) { // если нельзя логировать ошибки
-			nek.log('BOOTLOADER', 'Can\'t log errors in dm. Shutting down...');
+			nek.log('BOOTLOADER', 'Skipped error report. Shutting down...');
 			process.exit(1);
 		} else {
-			nek.log('BOOTLOADER', 'Trying to log errors in dm...');
+			nek.log('BOOTLOADER', 'Trying to report errors...');
 			social.logErrors(nek, totalErrors);
 			return;
 		}

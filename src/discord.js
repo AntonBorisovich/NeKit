@@ -17,25 +17,29 @@ let ignoreNewMsg = false; // если true, то новые команды не 
 class discord {
     constructor(nek){
 		this.name = "discord";
-		this.version = "dev";
+		this.version = "1.0.1";
     }
 	
     async start(nek){ // ОБЫЧНОЕ НАЧАЛО РАБОТЫ
+		client.version = this.version; // задаём версию socfile-а
+		const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав, она будет использоватся далее
+		const logger = nek.functions.get("logger"); // получаем функцию логирования
+		
 		process.on('uncaughtException', function (err) {
+			nek.errorsCount = nek.errorsCount + 1;
 			logger.uncaughtError(nek, client, err);
 		});
+		
 		if (nek.config.debug) {
 			client.on('debug', async (info) => {nek.log('DEBUG', info, 'yellow')});
 			client.on('warn', async (info) => {nek.log('WARN', info, 'yellow')});
 		}
-		const permsFunc = nek.functions.get("perms"); // получаем функцию проверки прав, она будет использоватся далее
-		const logger = nek.functions.get("logger"); // получаем функцию логирования
 		
 		// ФУНКЦИЯ ПЕРЕПОДКЛЮЧЕНИЯ
 		nek.reconnect = () => { // функция переподключения
 			nek.log('DISCORD', 'Reconnecting...', 'cyan')
 			if (works.size !== 0) { // если никто не юзает бота сейчас
-				ignoreNewMsg = true; // запрещаем обращаться к боту
+				ignoreNewMsg = true; // запрещаем выполнять команды пользователям
 				client.user.setStatus('idle'); // статус не на месте
 				client.user.setActivity('Переподключаюсь...'); // играет в Переподключаюсь...
 				nek.log('DISCORD', 'Someone is using bot right now. Trying again in 5 seconds...', 'cyan')
@@ -50,34 +54,23 @@ class discord {
 			nek.log('DISCORD', 'Logging in...', 'cyan', true)
 			client.login(nek.config["token_" + this.name]); // входим
 			nek.simplelog('OK!', 'green')
-			setTimeout(() => { // задаем статусы через 10 секунд ибо discord moment
-				ignoreNewMsg = false; // разрешаем обращаться к боту
+			setTimeout(() => { // задаем статусы через 5 секунд
+				ignoreNewMsg = false; // разрешаем выполнять команды пользователям
 				if (!nek.config.noActivity) {
-					client.user.setStatus('online'); // статус невидимки
+					client.user.setStatus('online'); // статус
 					client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
 				}
-			}, 10000);
+			}, 5000);
 			return;
 		}
 		
-		// ВХОД
-		try {
-			nek.log("DISCORD", "Logging in...", "cyan", );
-			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
-			//nek.config["token_" + this.name] = null;
-		} catch(e) {
-			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
-			console.error(e); // вывод полной ошибки
-			process.exit(1); // закрываем бота
-		}
-		
-		
 		// ПОСЛЕ ВХОДА
 		client.once(Discord.Events.ClientReady, async () => { // когда залогинились
-			nek.log("DISCORD", "Logged in as " + client.user.tag, "cyan"); // залогинились как *имя пользователя*
-			nek.log(" READY ", `Total launch time: ${((Date.now() - nek.launch_time) / 1000 )}s`, "green"); // логируем что залогинились за n секунд с запуска бота
+			nek.loginTime = Date.now(); // запоминаем дату логина
+			nek.log("DISCORD", "Logged in as " + client.user.tag, "cyan"); // залогинились как *имя бота*
+			nek.log(" READY ", `Total launch time: ${((Date.now() - nek.launchTime) / 1000 )}s`, "green"); // логируем что залогинились за n секунд с запуска бота
 			if (!nek.config.noActivity) {
-				client.user.setStatus('online'); // статус невидимки
+				client.user.setStatus('online'); // статус
 				client.user.setActivity(nek.config.prefix + 'help'); // играет в <prefix>help
 			}
 			
@@ -86,23 +79,22 @@ class discord {
 				.setTitle('Logged in')
 				.setColor(nek.config.basecolor)
 				.setDescription(nek.config.fullname + " is ready to work!\n\nBootloader ver: `" + nek.config.version + "`\n" + this.name + " ver: `" + this.version + "`")
-				.setTimestamp()
+				.setTimestamp();
 			const botowner = await client.users.fetch(nek.config.developers[0]); // ищем разработчика по id
 			await botowner.send({ embeds: [embed] }); // отправляем разрабу
 		});
 		
 		// СООБЩЕНИЯ
 		async function messageHandler(msg){
-			if (ignoreNewMsg) return; // если сказано игнорить - игнор
-			if (msg.author.bot) return; // если бот - игнор
+			if (ignoreNewMsg || msg.author.bot) return; // если запрещено исполнять новую команду или пользователь - бот, то игнорим
 			
 			msg.content = msg.content.trim(); // убираем лишние пробелы с начала и конца, что бы корректно найти префикс
 			if (msg.content.substring(0, nek.config.prefix.length).toLowerCase() !== nek.config.prefix) return; // если не найден префикс - игнор
 
 			let args = msg.content.split(" "); // разделяем всё сообщение на слова (через пробел)
+			
 			const commName = args[0].slice(nek.config.prefix.length); // выделяем название команды
 			let comm = nek.commands.get(commName); // получаем команду из мапы
-			
 			if (!comm) return; // если такая команда не найдена - игнор
 			
 			// КОМАНДА НАЙДЕНА
@@ -113,11 +105,10 @@ class discord {
 
 			const startTime = Date.now(); // запоминаем когда начали работать над командой
 			
-			
 			if (args[args.length-1].toLowerCase() === "--help") { // если последний аргумент - "--help"
 				const helpComm = nek.commands.get("help"); // ищем команду help
-				args = [nek.config.prefix + helpComm.name, comm.name]; // подменяем аргументы
 				comm = helpComm; // подменяем исполняемую команду на help
+				args = [nek.config.prefix + helpComm.name, comm.name]; // подменяем аргументы
 			}
 			
 			let sendMsgPerm = "SEND_MESSAGES"; // проверять право, которое даст нам печатать в КАНАЛАХ
@@ -131,7 +122,7 @@ class discord {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('Нету нужных прав')
 						.setColor(nek.config.errorcolor)
-						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\n[Что значат эти буквы?](https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags)')
+						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\n[Что значат эти буквы?](https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags)');
 					await msg.reply({ embeds: [embed] });
 					return;
 				} else if (!permsFunc.checkPerms(nek, msg, [sendMsgPerm])[0]) { // если вообще можно печатать, то отправить ошибку текстом
@@ -141,7 +132,7 @@ class discord {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('Нету нужных прав')
 						.setColor(nek.config.errorcolor)
-						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\nСообщите об этом владельцу сервера!')
+						.setDescription('Для работы команды `' + comm.name + '` нужны следующие права: `' + missingPerms.join(', ') + '`\nСообщите об этом владельцу сервера!');
 					await msg.author.send({ embeds: [embed] });
 					return;
 				}
@@ -154,7 +145,7 @@ class discord {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('Команда 2FA не найдена!')
 						.setColor(nek.config.errorcolor)
-						.setDescription("Это невозможно, но команда 2FA не найдена. Вы не можете использовать 2FA команды")
+						.setDescription("Это невозможно, но команда 2FA не найдена. Вы не можете использовать 2FA команды");
 					await msg.reply({ embeds: [embed] });
 					return;
 				}
@@ -165,7 +156,7 @@ class discord {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('Неверный код')
 						.setColor(nek.config.errorcolor)
-						.setDescription("Код не подошёл или вы его не указали. Напишите ваш 2FA код в конце сообщения через пробел. Например `" + nek.config.prefix + comm.name + " 013370`")
+						.setDescription("Код не подошёл или вы его не указали. Напишите ваш 2FA код в конце сообщения через пробел. Например `" + nek.config.prefix + comm.name + " 013370`");
 					await msg.reply({ embeds: [embed] });
 					return;
 				}
@@ -173,7 +164,7 @@ class discord {
 					let embed = new Discord.EmbedBuilder()
 						.setTitle('2FA')
 						.setColor(nek.config.errorcolor)
-						.setDescription("Секрет не задан. Попробуйте создать его через `" + nek.config.prefix + "2fa create`")
+						.setDescription("Секрет не задан. Попробуйте создать его через `" + nek.config.prefix + "2fa create`");
 					await msg.reply({ embeds: [embed] });
 					return;
 				}
@@ -186,21 +177,22 @@ class discord {
 			}, 2000);
 			
 			works.set(msg.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
-			nek.log('MESSAGE', 'Executed  "' + comm.name + '" (' + msg.id + ')', 'gray');
+			nek.log('MESSAGE', 'Executing "' + comm.name + '" (' + msg.id + ')', 'gray');
 			try {
 				await comm.run(nek, client, msg, args); // запускаем команду
 			} catch(e) {
+				nek.errorsCount = nek.errorsCount + 1;
 				console.error(e);
 				let embed = new Discord.EmbedBuilder()
 					.setTitle('Ошибка')
 					.setColor(nek.config.errorcolor)
 					.setDescription("Произошла неизвестная ошибка")
-					.setFooter({text: e.name + ": " + e.message})
+					.setFooter({text: e.name + ": " + e.message});
 				msg.reply({ embeds: [embed] });
 				return;
 			}
 			works.delete(msg.id); // удаляем, т.к. мы закончили работу
-			nek.log('MESSAGE', 'Done with "' + comm.name + '" (' + msg.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
+			nek.log('MESSAGE', 'Executed  "' + comm.name + '" (' + msg.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
 			return;
 		}
 		client.on(Discord.Events.MessageCreate, async (msg) => { // если новое сообщение в чате
@@ -286,10 +278,11 @@ class discord {
 			//}, 1500);
 			
 			works.set(interaction.id, {name: comm.name, timestamp: startTime}); // запоминаем, что мы начали работу над этой командой
-			nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ')', 'gray');
+			nek.log('INTERACTION', 'Executing "' + comm.name + '" (' + interaction.id + ')', 'gray');
 			try {
 				await comm.interaction(nek, client, interaction); // запускаем команду
 			} catch(e) {
+				nek.errorsCount = nek.errorsCount + 1;
 				console.error(e);
 				let embed = new Discord.EmbedBuilder()
 					.setTitle('Ошибка')
@@ -300,24 +293,24 @@ class discord {
 				return;
 			}
 			works.delete(interaction.id); // удаляем, т.к. мы закончили работу
-			nek.log('INTERACTION', 'Done with "' + comm.name + '" (' + interaction.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
+			nek.log('INTERACTION', 'Executed  "' + comm.name + '" (' + interaction.id + ') in ' + (Date.now() - startTime) + 'ms', 'gray');
 			return;
 		});
-    }
-	
-	
-	async logErrors(nek, totalErrors){ // ВХОД И ЛОГ ОШИБОК РАЗРАБОТЧИКАМ
-	
+		
 		// ВХОД
 		try {
-			nek.log("DISCORD", "Logging in...", "cyan");
+			nek.log("DISCORD", "Logging in...", "cyan", );
 			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
+			//nek.config["token_" + this.name] = null;
 		} catch(e) {
 			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
 			console.error(e); // вывод полной ошибки
 			process.exit(1); // закрываем бота
 		}
-		
+    }
+	
+	
+	async logErrors(nek, totalErrors){ // ВХОД И ЛОГ ОШИБОК РАЗРАБОТЧИКАМ
 		// КОГДА ВОШЛИ
 		client.once(Discord.Events.ClientReady, async () => {
 			try {
@@ -341,6 +334,16 @@ class discord {
 				process.exit(1); // закрываем бота
 			}
 		});
+		
+		// ВХОД
+		try {
+			nek.log("DISCORD", "Logging in...", "cyan");
+			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
+		} catch(e) {
+			nek.log("ERROR", "Failed to login!", "red"); // сообщаем, что всё всё пошло по жопе
+			console.error(e); // вывод полной ошибки
+			process.exit(1); // закрываем бота
+		}
     }
 }
 
