@@ -2,7 +2,7 @@
 // - Доделать страницу с фото (взять хотя бы плейсхолдер из команды stts)
 // - Сделать более универсальное изменение содержимого отправленных кнопок (это активно используется в интеракциях)
 // - Дать пользователю выбор отображать сторонний транспорт или нет (второй список список: только выбранный, на том же маршруте, все <тип транспорта>)
-// - Дать пользователю выбор степени зума (ещё одинм рядом кнопок ниже)
+// - DONE Дать пользователю выбор степени зума (ещё одинм рядом кнопок ниже)
 
 // == Библиотеки
 const Discord = require("discord.js");
@@ -33,66 +33,6 @@ const pluralReadableType = { // форматирование в читабель
 	'tram': 'трамваи'
 }
 const dirToBlock = ["🟦", "🟧"]; // а это вообще надо?
-
-// == Основной код. Обработка запроса пользователя и установка информации о команде
-class NewOrgp {
-	constructor(nek){
-		this.category = "transport";
-		
-		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
-        this.name = "neworgp"; // имя команды
-		this.desc = "питерский наземный транспорт"; // описание команды в общем списке команд
-		this.advdesc = "Берёт информацию о маршрутах в Санкт-Петербурге с [сайта \"Портал Общественного Транспорта Санкт-Петербурга\"](https://transport.orgp.spb.ru/).\n" +
-			"Фото и данные о троллейбусах и трамваях предоставляются сайтом [transphoto.org](https://transphoto.org).\n" +
-			"Фото и данные об автобусах предоставляются сайтом [fotobus.msk.ru](https://fotobus.msk.ru/).\n\n" +
-			"Сделано по заказу <@374144960221413386>"; // описание команды в помоще по конкретной команде
-		this.args = "<операция> <тип> <номер>"; // аргументы в общем списке команд
-		this.argsdesc =
-		"`<операция>` - маршрут (м...) [поиск машин на данном вами маршруте], поиск (п...) [поиск маршрута, если забыли], номер (н...) [поиск машины по номеру]\n" +
-		"`<тип>` - троллейбус (тро...), автобус (ав...), трамвай (тра...)\n" +
-		"`<номер>` - номер маршрута"; // описание аргументов в помоще по конкретной команде
-		this.advargs = "<операция> <тип> <номер>"; // аргументы в помоще по конкретной команде
-    };
-    async run(nek, client, msg, args){
-		args.shift(); // режем первый аргумент т.к. это название команды
-		let orgpArgs = {}; // делаем пустой объект с аргументами
-		if (!args[0]) { // если не был дан никакой аргумент, то запросить их
-			args = await argsProcess.gui(nek, msg, args); // ждем готовых аргументов
-			if (!args) return;
-		}
-		orgpArgs = await argsProcess.cli(args); // ждем готовых аргументов (через текстовые аргументы)
-		if (orgpArgs.workMode === "byRoute") {
-			await msgProcess.searchByRoute(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
-		} else if (orgpArgs.workMode === "byLabel") {
-			await msgProcess.searchByLabel(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
-		} else if (orgpArgs.workMode === "searchRoute") {
-			await msgProcess.searchRouteName(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
-		} else {
-			let embed = new Discord.EmbedBuilder()
-			.setTitle('Неизвестная операция')
-			.setColor(nek.config.errorcolor)
-			.setDescription('Неизвестная операция. Прочитайте аргументы в `' + nek.config.prefix + this.name + ' --help`')
-			await msg.reply({ embeds: [embed] });
-		}
-		return;
-	}
-	
-	async interaction(nek, client, interaction){
-		const customId = interaction.customId.split("_");
-		if (customId[4].substring(1) === "m"){ // map (кнопки "Местоположение" и "Обновить")
-			await interaction.deferUpdate();
-			await interactionProcess.pageMap(nek, client, interaction);
-			return;
-		}
-		if (customId[4].substring(1) === "p"){ // photo (кнопка "Фото")
-			await interaction.deferUpdate();
-			await interactionProcess.pagePhoto(nek, client, interaction);
-			return;
-		}
-		await interaction.reply({content: 'чето не то'});
-		return;
-	}
-};
 
 // == Обработка аргументов
 let argsProcess = {};
@@ -273,7 +213,7 @@ msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // пои
 		return;
 	}
 	const transports = await sillyProcess.getTransportFull(nek, transType, msg); 
-	console.log(transports)
+	//console.log(transports)
 	const waitmsg = transports.m;
 	let routeTransports = []; // транспорты на нужном нам маршруте
 	let labels = [];
@@ -532,26 +472,56 @@ webProcess.getTransport = async (type, bbox) => { // найти транпорт
 // == Обработка интерактивных элементов (кнопок и списков)
 let interactionProcess = {};
 interactionProcess.pageMap = async (nek, client, interaction) => {
+	let customId = interaction.customId.split("_");
 	
-	let label = false;
-	if (interaction.values) {
-		label = interaction.values[0];
-	} else {
-		label = interaction.message.embeds[0].data.title
-		label = label.substring(1,label.indexOf(" "))
+	let label;
+	if (interaction.values) { // если есть values (т.е. был выбран транспорт из списка)
+		label = interaction.values[0]; // берем бортовой номер из values
+	} else { // иначе
+		label = interaction.message.embeds[0].data.title // достаём заголовок embed-а
+		label = label.substring(1,label.indexOf(" ")) // обрезаем его до бортового номера
 	}
 	
-	
+	let zoom = Number(customId[5]);
+	//console.log(zoom)
+	if (!zoom) {
+		zoom = 15;
+	}
+	let customIdWithCustomZoom = customId; // создаем customId, где можно спокойно менять зум
+	customIdWithCustomZoom[5] = (zoom - 1);
+	const zoomOut = new Discord.ButtonBuilder()
+		.setCustomId(customIdWithCustomZoom.join('_'))
+		.setLabel('🔎 -')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(false);
+	const zoomCurrent = new Discord.ButtonBuilder()
+		.setCustomId('currentZoom')
+		.setLabel('🔎 ' + zoom)
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(true);
+	customIdWithCustomZoom[5] = (zoom + 1);
+	const zoomIn = new Discord.ButtonBuilder()
+		.setCustomId(customIdWithCustomZoom.join('_'))
+		.setLabel('🔎 +')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(false);
+	let zoomRow = new Discord.ActionRowBuilder().addComponents(zoomOut, zoomCurrent, zoomIn);
 	
 	let buttonsRow = interaction.message.components[1]
 	let listRow = interaction.message.components[0];
-	// выключаем всё на время зарузки
-	listRow.components[0].data.disabled = true;
-	buttonsRow.components[0].data.disabled = true;
-	buttonsRow.components[1].data.disabled = true;
-	buttonsRow.components[1].data.label = "Загрузка..."; // меняем имя кноки "Местоположение" во время загрузки
+	// выключаем все кнопки пока карта ещё не отправлена
+	listRow.components[0].data.disabled = true; // выключаем список
+	buttonsRow.components[0].data.disabled = true; // выключаем кнопку map
+	buttonsRow.components[1].data.disabled = true; // выключаем кнопку
 	
-	await interaction.message.edit({components: [listRow, buttonsRow]}); // отправляем выключенные кнопки
+	customIdWithCustomZoom[5] = zoom; // меняем зум
+	buttonsRow.components[1].data.custom_id = customIdWithCustomZoom.join('_'); // меняем customId с новым значением зума
+	
+	buttonsRow.components[1].data.label = "Загрузка..."; // меняем имя кноки "Местоположение" во время загрузки
+	zoomRow.components[0].data.disabled = true;
+	zoomRow.components[2].data.disabled = true;
+	
+	await interaction.message.edit({components: [listRow, buttonsRow, zoomRow]}); // отправляем выключенные кнопки
 	
 	let listId = listRow.components[0].data.custom_id;
 	listId = listId.substring(0, listId.length-1) + "m";
@@ -559,28 +529,16 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 	listRow.components[0].data.disabled = false; // включаем список
 	buttonsRow.components[0].data.disabled = false; // включаем кнопку "Фото"
 	buttonsRow.components[0].data.style = 1; // делаем кнопку "Фото" синей
+	
 	buttonsRow.components[1].data.disabled = false; // включаем кнопку "Местоположение"
 	buttonsRow.components[1].data.label = "Обновить"; // меняем имя кноки "Местоположение"
+	
 	buttonsRow.components[1].data.style = 3; // делаем кнопку "Местоположение" зелёной
-	console.log(buttonsRow.components[1].data);
 	
+	zoomRow.components[0].data.disabled = false;
+	zoomRow.components[2].data.disabled = false;
 	
-	
-	
-	
-	// const zoomOut = new Discord.ButtonBuilder()
-		// .setCustomId(preId + "bm_" + (zoom-1))
-		// .setLabel('🔎 -')
-		// .setStyle(Discord.ButtonStyle.Secondary)
-		// .setDisabled(false);
-	// const zoomIn = new Discord.ButtonBuilder()
-		// .setCustomId(preId + "bm_" + (zoom+1))
-		// .setLabel('🔎 +')
-		// .setStyle(Discord.ButtonStyle.Secondary)
-		// .setDisabled(false);
-	// const zoomRow = new Discord.ActionRowBuilder().addComponents(zoomOut, zoomIn);
-	
-	const type = interaction.customId.split("_")[3];
+	const type = customId[3];
 	const transports = await sillyProcess.getTransportFull(nek, type, false); // ищем по всему питеру
 	let car = false;
 	const map = new StaticMaps({
@@ -588,30 +546,31 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 		height: 512,
 		tileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 	});
-	const drawCar = (map, trans) => {
+	const drawCar = (map, trans) => { // добавляем машину на карту (маркер нужного цвета + номер маршрута + бортовой номер
 		let directionRounded = Math.ceil(trans.Direction / 15) * 15; // округляем градусы по 15
 		if (directionRounded >= 360) directionRounded = 0;
-		const markerPath = "./src/assets/orgp/markers/" + trans.TransportType + "_" + directionRounded + ".png";
-		const vehicleIconPath = "./src/assets/orgp/icons/" + trans.TransportType + "_small.png";
-		const markerparam = {
+
+		const markerPath = "./src/assets/orgp/markers/" + trans.TransportType + "_" + directionRounded + ".png"; // путь до кружка
+		map.addMarker({ // добавляем кружок
 			img: markerPath,
 			offsetX: 32,
 			offsetY: 32,
 			width: 64,
 			height: 64,
 			coord : [trans.Location.Longitude, trans.Location.Latitude]
-		};
-		map.addMarker(markerparam); // рисуем стрелочку
-		// const iconparam = {
+		});
+		
+		// const vehicleIconPath = "./src/assets/orgp/icons/" + trans.TransportType + "_small.png"; // путь до пиктограммы типа транспорта.
+		// map.addMarker({ // добавляем пиктограмму типа транспорта
 			// img: vehicleIconPath,
 			// offsetX: 32,
 			// offsetY: 32,
 			// width: 64,
 			// height: 64,
 			// coord : [trans.Location.Longitude, trans.Location.Latitude]
-		// };
-		// map.addMarker(iconparam); // рисуем иконку
-		const labelText = {
+		// });
+		
+		map.addText({ // добавляем бортовой номер
 			text: trans.VehicleLabel,
 			size: 16,
 			width: 1,
@@ -621,9 +580,9 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 			anchor: 'middle',
 			offsetY: 2,
 			coord : [trans.Location.Longitude, trans.Location.Latitude]
-		  };
-		map.addText(labelText);
-		const routeText = {
+		});
+		
+		map.addText({ // добавляем номер маршрута
 			text: trans.RouteShortName,
 			size: 16,
 			width: 1,
@@ -633,38 +592,38 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 			anchor: 'middle',
 			offsetY: -15,
 			coord : [trans.Location.Longitude, trans.Location.Latitude]
-		  };
-		map.addText(routeText);
+		});
 		
 	}
 	for await (const trans of transports.t) { // чекаем все маршруты
 		if (trans.VehicleLabel === label) { // если это маршрут, который был указан пользователем
 			car = trans;
-		} else {
-			drawCar(map, trans);
-		}
+		} //else {
+			//drawCar(map, trans);
+		//}
 	}
 	if (!car) {
 		embed = new Discord.EmbedBuilder()
 			.setTitle("№" + label + " - Местоположение")
 			.setColor(nek.config.basecolor)
-			.setDescription("Не удалось найти машину. Возможно она уже не на маршруте)")
-		await interaction.message.edit({files: [], embeds: [embed], components: [listRow, buttonsRow]}); // отправляем
+			.setDescription("Не удалось найти машину. Возможно она уже не на маршруте)");
+		await interaction.message.edit({files: [], embeds: [embed], components: [listRow, buttonsRow, zoomRow]}); // отправляем
 		return;
 	}
 	drawCar(map, car); // рисуем искомую машину в последнюю очередь, что бы она была выше всех
-	const startTime2 = Date.now();
-	await map.render([car.Location.Longitude, car.Location.Latitude], 15); // рендерим карту
-	console.log('rendered in ' + (Date.now() - startTime2) / 1000);
+	//const startTime2 = Date.now();
+	await map.render([car.Location.Longitude, car.Location.Latitude], zoom); // рендерим карту
+	//console.log('rendered in ' + (Date.now() - startTime2) / 1000);
 	const mappic = await map.image.buffer('image/png'); // сохраняем в буфер
-	const unixTime = Math.floor(Date.now() / 1000);
+	const updateTime = new Date(car.DateTime.replace(/Z/g, '+03:00'));
+	
 	embed = new Discord.EmbedBuilder()
 		.setTitle("№" + label + " - Местоположение")
 		.setColor(nek.config.basecolor)
-		.setDescription("Карта для №" + car.VehicleLabel + " (<t:" + unixTime +":T>)")
+		.setDescription("Последние обновление положения: <t:" + (updateTime.getTime() / 1000) + ":R>")
 		.setImage('attachment://' + car.VehicleLabel + '.png');
 	const fileWithName = new Discord.AttachmentBuilder(mappic, { name: car.VehicleLabel + '.png' });
-	await interaction.message.edit({files: [fileWithName], embeds: [embed], components: [listRow, buttonsRow]}); // отправляем
+	await interaction.message.edit({files: [fileWithName], embeds: [embed], components: [listRow, buttonsRow, zoomRow]}); // отправляем
 	return;		
 }
 interactionProcess.pagePhoto = async (nek, client, interaction) => {
@@ -794,5 +753,65 @@ sillyProcess.getTransportFull = async (nek, transType, msg) => {
 	}
 	return {t: transports, l: limitReached, m: waitmsg};
 }
+
+// == Основной код. Обработка запроса пользователя и установка информации о команде
+class NewOrgp {
+	constructor(nek){
+		this.category = "transport";
+		
+		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
+        this.name = "neworgp"; // имя команды
+		this.desc = "питерский наземный транспорт"; // описание команды в общем списке команд
+		this.advdesc = "Берёт информацию о маршрутах в Санкт-Петербурге с [сайта \"Портал Общественного Транспорта Санкт-Петербурга\"](https://transport.orgp.spb.ru/).\n" +
+			"Фото и данные о троллейбусах и трамваях предоставляются сайтом [transphoto.org](https://transphoto.org).\n" +
+			"Фото и данные об автобусах предоставляются сайтом [fotobus.msk.ru](https://fotobus.msk.ru/).\n\n" +
+			"Сделано по заказу <@374144960221413386>"; // описание команды в помоще по конкретной команде
+		this.args = "<операция> <тип> <номер>"; // аргументы в общем списке команд
+		this.argsdesc =
+		"`<операция>` - маршрут (м...) [поиск машин на данном вами маршруте], поиск (п...) [поиск маршрута, если забыли], номер (н...) [поиск машины по номеру]\n" +
+		"`<тип>` - троллейбус (тро...), автобус (ав...), трамвай (тра...)\n" +
+		"`<номер>` - номер маршрута"; // описание аргументов в помоще по конкретной команде
+		this.advargs = "<операция> <тип> <номер>"; // аргументы в помоще по конкретной команде
+    };
+    async run(nek, client, msg, args){
+		args.shift(); // режем первый аргумент т.к. это название команды
+		let orgpArgs = {}; // делаем пустой объект с аргументами
+		if (!args[0]) { // если не был дан никакой аргумент, то запросить их
+			args = await argsProcess.gui(nek, msg, args); // ждем готовых аргументов
+			if (!args) return;
+		}
+		orgpArgs = await argsProcess.cli(args); // ждем готовых аргументов (через текстовые аргументы)
+		if (orgpArgs.workMode === "byRoute") {
+			await msgProcess.searchByRoute(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
+		} else if (orgpArgs.workMode === "byLabel") {
+			await msgProcess.searchByLabel(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
+		} else if (orgpArgs.workMode === "searchRoute") {
+			await msgProcess.searchRouteName(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
+		} else {
+			let embed = new Discord.EmbedBuilder()
+			.setTitle('Неизвестная операция')
+			.setColor(nek.config.errorcolor)
+			.setDescription('Неизвестная операция. Прочитайте аргументы в `' + nek.config.prefix + this.name + ' --help`')
+			await msg.reply({ embeds: [embed] });
+		}
+		return;
+	}
+	
+	async interaction(nek, client, interaction){
+		const customId = interaction.customId.split("_");
+		if (customId[4].substring(1) === "m"){ // map (кнопки "Местоположение" и "Обновить")
+			await interaction.deferUpdate();
+			await interactionProcess.pageMap(nek, client, interaction);
+			return;
+		}
+		if (customId[4].substring(1) === "p"){ // photo (кнопка "Фото")
+			await interaction.deferUpdate();
+			await interactionProcess.pagePhoto(nek, client, interaction);
+			return;
+		}
+		await interaction.reply({content: 'чето не то'});
+		return;
+	}
+};
 
 module.exports = NewOrgp;
