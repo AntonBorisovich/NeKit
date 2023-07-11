@@ -299,7 +299,7 @@ class discord {
 		
 		// ВХОД
 		try {
-			nek.log("DISCORD", "Logging in...", "cyan", );
+			nek.log("DISCORD", "Logging in...", "cyan");
 			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
 			//nek.config["token_" + this.name] = null;
 		} catch(e) {
