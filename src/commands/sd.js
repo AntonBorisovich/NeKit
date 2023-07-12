@@ -388,7 +388,7 @@ const changeModel = async (nek, client, interaction) => {
 	return;
 }
 
-class Neuro {
+class Sd {
     constructor(nek){
 		//задать полученые значения для дальнейшего использования в коде команды
 		//this.version = "1.0";
@@ -402,7 +402,7 @@ class Neuro {
         this.advdesc = "Это, наверное, самая эксперементальная команда. С помощью компьютера разработчика (если он включён) можно сгенерировать нейромазню.\n" +
 		"Всякие ссылки на то, что помогает этому работать:\n"+
 		"-[stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) - API, с помощью которого можно через бота опросить комп\n";
-        this.name = "neuro";
+        this.name = "sd";
     }
 
     async run(nek, client, msg, args){
@@ -547,5 +547,5 @@ class Neuro {
     }
 }
 
-module.exports = Neuro;
+module.exports = Sd;
 
