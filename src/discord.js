@@ -107,8 +107,8 @@ class discord {
 			
 			if (args[args.length-1].toLowerCase() === "--help") { // если последний аргумент - "--help"
 				const helpComm = nek.commands.get("help"); // ищем команду help
-				comm = helpComm; // подменяем исполняемую команду на help
 				args = [nek.config.prefix + helpComm.name, comm.name]; // подменяем аргументы
+				comm = helpComm; // подменяем исполняемую команду на help
 			}
 			
 			let sendMsgPerm = "SEND_MESSAGES"; // проверять право, которое даст нам печатать в КАНАЛАХ
@@ -299,6 +299,7 @@ class discord {
 		
 		// ВХОД
 		try {
+			nek.log("DISCORD", "Logging in...", "cyan");
 			nek.log("DISCORD", "Logging in...", "cyan");
 			client.login(nek.config["token_" + this.name]); // логинимся в дискорд
 			//nek.config["token_" + this.name] = null;
