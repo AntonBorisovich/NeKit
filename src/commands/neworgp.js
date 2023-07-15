@@ -227,6 +227,7 @@ msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // пои
 	}
 	
 	labels.sort(); // сортируем
+	
 	publicOut.sort(); // сортируем
 	publicOut = publicOut.join(''); // преобразуем отсортированный массив в строку
 	if (!routeTransports[0]) { // если ничего не нашли
@@ -250,29 +251,7 @@ msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // пои
 	}
 	const preId = msg.author.id + "_0_neworgp_" + transType + "_";
 	
-	// списки
-	let selectList;
-	if (labels.length <= 25) {
-		selectList = new Discord.StringSelectMenuBuilder()
-			.setCustomId(preId + "lp")
-			.setPlaceholder('Получить больше инфы о...')
-			.setDisabled(false);
-		await labels.forEach((label) => {
-			selectList.addOptions({
-				label: label,
-				value: label
-			});
-		});
-	} else {
-		selectList = new Discord.StringSelectMenuBuilder()
-			.setCustomId(preId + "lp")
-			.setPlaceholder('Получить больше инфы о...')
-			.setDisabled(true);
-		selectList.addOptions({
-			label: ' ',
-			value: ' '
-		});
-	}
+	
 	
 	
 	// кнопки
@@ -288,11 +267,60 @@ msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // пои
 		.setDisabled(true);
 	
 	// создаем строки интерактивных элементов
-	const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
+	
 	const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, map);
 	
-	await waitmsg.edit({ embeds: [embed], components: [listRow, buttonsRow] });
-	return;
+	// списки
+	
+	
+	if (labels.length <= 25) {
+		let selectList = new Discord.StringSelectMenuBuilder()
+			.setCustomId(preId + "lp")
+			.setPlaceholder('Получить больше инфы о...')
+			.setDisabled(false);
+		await labels.forEach((label) => {
+			selectList.addOptions({
+				label: label,
+				value: label
+			});
+		});
+		const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
+		await waitmsg.edit({ embeds: [embed], components: [listRow, buttonsRow] });
+		return;
+	} else {
+		let labels1 = labels.slice(0, 25)
+		
+		let selectList = new Discord.StringSelectMenuBuilder()
+			.setCustomId(preId + "lp")
+			.setPlaceholder('Получить больше инфы о...')
+			.setDisabled(false);
+		await labels1.forEach((label) => {
+			selectList.addOptions({
+				label: label,
+				value: label
+			});
+		});
+		let labels2 = labels.slice(25) // обрезаем массив так, что бы там остались только машины после 25
+		console.log(labels)
+		console.log(labels1)
+		console.log(labels2)
+		let selectList2 = new Discord.StringSelectMenuBuilder()
+			.setCustomId(preId + "Lp")
+			.setPlaceholder('Получить больше инфы о....')
+			.setDisabled(false);
+		await labels2.forEach((label) => {
+			selectList2.addOptions({
+				label: label,
+				value: label
+			});
+		});
+		const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
+		const listRow2 = new Discord.ActionRowBuilder().addComponents(selectList2);
+		await waitmsg.edit({ embeds: [embed], components: [listRow, listRow2, buttonsRow] });
+		return;
+	}
+	
+	
 }
 msgProcess.searchByLabel = async (nek, msg, label, transType) => { // Поиск по бортовому номеру
 	let embed = new Discord.EmbedBuilder()
@@ -507,10 +535,23 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 		.setDisabled(false);
 	let zoomRow = new Discord.ActionRowBuilder().addComponents(zoomOut, zoomCurrent, zoomIn);
 	
-	let buttonsRow = interaction.message.components[1]
 	let listRow = interaction.message.components[0];
+	let listRow2;
+	let buttonsRow = interaction.message.components[1];
+	
+	let components = [];
+	
 	// выключаем все кнопки пока карта ещё не отправлена
 	listRow.components[0].data.disabled = true; // выключаем список
+	components.push(listRow);
+	if (!interaction.message.components[1].components[0].data.style) { // если у 2-ой строки, у 1-го элемента нет стиля (т.е. там не кнопка, а список), то делаем чето на индийском
+		buttonsRow = interaction.message.components[2]; // переназначаем ряд кнопок
+		
+		listRow2 = interaction.message.components[1];
+		listRow2.components[0].data.disabled = true; // выключаем список
+		components.push(listRow2);
+	}
+	
 	buttonsRow.components[0].data.disabled = true; // выключаем кнопку map
 	buttonsRow.components[1].data.disabled = true; // выключаем кнопку
 	
@@ -518,15 +559,26 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 	buttonsRow.components[1].data.custom_id = customIdWithCustomZoom.join('_'); // меняем customId с новым значением зума
 	
 	buttonsRow.components[1].data.label = "Загрузка..."; // меняем имя кноки "Местоположение" во время загрузки
+	components.push(buttonsRow);
 	zoomRow.components[0].data.disabled = true;
 	zoomRow.components[2].data.disabled = true;
+	components.push(zoomRow);
 	
-	await interaction.message.edit({components: [listRow, buttonsRow, zoomRow]}); // отправляем выключенные кнопки
-	
+	await interaction.message.edit({components: components}); // отправляем выключенные кнопки
+	components = []; // очищаем список компонентов. собираем заново
 	let listId = listRow.components[0].data.custom_id;
 	listId = listId.substring(0, listId.length-1) + "m";
 	listRow.components[0].data.custom_id = listId;
 	listRow.components[0].data.disabled = false; // включаем список
+	components.push(listRow)
+	
+	if (!interaction.message.components[1].components[0].data.style) { // если у 2-ой строки, у 1-го элемента нет стиля (т.е. там не кнопка, а список), то делаем чето на индийском
+		let listId2 = listRow2.components[0].data.custom_id;
+		listId2 = listId2.substring(0, listId2.length-1) + "m";
+		listRow2.components[0].data.custom_id = listId2;
+		listRow2.components[0].data.disabled = false; // включаем список
+		components.push(listRow2);
+	}
 	buttonsRow.components[0].data.disabled = false; // включаем кнопку "Фото"
 	buttonsRow.components[0].data.style = 1; // делаем кнопку "Фото" синей
 	
@@ -534,9 +586,11 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 	buttonsRow.components[1].data.label = "Обновить"; // меняем имя кноки "Местоположение"
 	
 	buttonsRow.components[1].data.style = 3; // делаем кнопку "Местоположение" зелёной
+	components.push(buttonsRow);
 	
 	zoomRow.components[0].data.disabled = false;
 	zoomRow.components[2].data.disabled = false;
+	components.push(zoomRow);
 	
 	const type = customId[3];
 	const transports = await sillyProcess.getTransportFull(nek, type, false); // ищем по всему питеру
@@ -606,8 +660,8 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 		embed = new Discord.EmbedBuilder()
 			.setTitle("№" + label + " - Местоположение")
 			.setColor(nek.config.basecolor)
-			.setDescription("Не удалось найти машину. Возможно она уже не на маршруте)");
-		await interaction.message.edit({files: [], embeds: [embed], components: [listRow, buttonsRow, zoomRow]}); // отправляем
+			.setDescription("Не удалось найти машину. Возможно она уже не на маршруте");
+		await interaction.message.edit({files: [], embeds: [embed], components: components}); // отправляем
 		return;
 	}
 	drawCar(map, car); // рисуем искомую машину в последнюю очередь, что бы она была выше всех
@@ -623,7 +677,7 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 		.setDescription("Последние обновление положения: <t:" + (updateTime.getTime() / 1000) + ":R>")
 		.setImage('attachment://' + car.VehicleLabel + '.png');
 	const fileWithName = new Discord.AttachmentBuilder(mappic, { name: car.VehicleLabel + '.png' });
-	await interaction.message.edit({files: [fileWithName], embeds: [embed], components: [listRow, buttonsRow, zoomRow]}); // отправляем
+	await interaction.message.edit({files: [fileWithName], embeds: [embed], components: components}); // отправляем
 	return;		
 }
 interactionProcess.pagePhoto = async (nek, client, interaction) => {
@@ -641,19 +695,31 @@ interactionProcess.pagePhoto = async (nek, client, interaction) => {
 		.setColor(nek.config.basecolor)
 		.setDescription("Скоро тут будет страница с фоткой")
 		
+		
+	let components = []
 	let listRow = interaction.message.components[0];
 	let listId = listRow.components[0].data.custom_id;
 	listId = listId.substring(0, listId.length-1) + "p";
 	listRow.components[0].data.custom_id = listId;
-	
+	components.push(listRow);
+	let listRow2 = []
 	let buttonsRow = interaction.message.components[1]
+	if (!interaction.message.components[1].components[0].data.style) { // если у 2-ой строки, у 1-го элемента нет стиля (т.е. там не кнопка, а список), то делаем чето на индийском
+		// сын фермера ты бля переделай это потом нормально а не эту хуйню, да?
+		let listRow2 = interaction.message.components[1];
+		let listId2 = listRow2.components[0].data.custom_id;
+		listId2 = listId2.substring(0, listId2.length-1) + "p";
+		listRow2.components[0].data.custom_id = listId2;
+		components.push(listRow2);
+		buttonsRow = interaction.message.components[2]
+	}
 	buttonsRow.components[0].data.disabled = true; // выключаем кнопку "Фото"
 	buttonsRow.components[0].data.style = 3; // делаем кнопку "Фото" зелёной
 	buttonsRow.components[1].data.disabled = false; // включаем кнопку "Местоположение"
 	buttonsRow.components[1].data.label = "Местоположение"; // Меняем имя кнопки "Обновить"
 	buttonsRow.components[1].data.style = 1; // Меняем цвет кнопки "Местоположение" на синий
-	
-	await interaction.message.edit({content: ' ', files: [], embeds: [embed], components: [listRow, buttonsRow] });
+	components.push(buttonsRow);
+	await interaction.message.edit({content: ' ', files: [], embeds: [embed], components: components });
 	return;
 }
 
@@ -759,6 +825,7 @@ class NewOrgp {
 	constructor(nek){
 		this.category = "transport";
 		
+		this.ignoreModal = true;
 		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
         this.name = "neworgp"; // имя команды
 		this.desc = "питерский наземный транспорт"; // описание команды в общем списке команд

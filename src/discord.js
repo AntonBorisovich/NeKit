@@ -213,9 +213,9 @@ class discord {
 		// Пример:
 		//   929443921069752331_0_help_Guide0
 		client.on(Discord.Events.InteractionCreate, async (interaction) => {
-			if (interaction.isModalSubmit()) return; // тихо игнорим modal (они должны обрабатываться в коде команды)
+			//if (interaction.isModalSubmit()) return; // тихо игнорим modal (они должны обрабатываться в коде команды)
 
-			if (!interaction.isButton() && !interaction.isStringSelectMenu()) { // если не кнопка и не список
+			if (!interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isModalSubmit()) { // если и не кнопка, и не список, и не modal
 				nek.log('INTERACTION', 'Got unknown interaction', 'gray');
 				return;
 			}
@@ -241,6 +241,10 @@ class discord {
 			const comm = nek.commands.get(customId[2]);
 			if (!comm) {
 				nek.log('INTERACTION', 'Unknown command!');
+				return;
+			}
+			if (comm.ignoreModal && interaction.isModalSubmit()) {
+				nek.log('INTERACTION', 'Ignoring modal for command ' + comm.name);
 				return;
 			}
 			
