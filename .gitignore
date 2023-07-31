@@ -130,3 +130,4 @@ dist
 cmd.lnk
 src/config/secrets.json
 src/commands/oldorgp.js
+src/assets/orgp/ca/russian_trusted_root_ca_pem.crt

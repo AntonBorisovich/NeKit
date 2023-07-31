@@ -7,7 +7,11 @@
 // == Библиотеки
 const Discord = require("discord.js");
 const https = require("https");
+const fs = require("fs");
 const StaticMaps = require('staticmaps');
+
+// == Сертификат безопасности для HTTPS подключения (ебучая россия)
+const ca = fs.readFileSync('./src/assets/orgp/ca/russian_trusted_root_ca_pem.crt');
 
 // == Переменные
 let requests = new Map(); // карта, где хранятся запросы (типо по ключу (id сообщения) можно получить объект {msg: msg, info: {всякая инфа})
@@ -301,9 +305,6 @@ msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // пои
 			});
 		});
 		let labels2 = labels.slice(25) // обрезаем массив так, что бы там остались только машины после 25
-		console.log(labels)
-		console.log(labels1)
-		console.log(labels2)
 		let selectList2 = new Discord.StringSelectMenuBuilder()
 			.setCustomId(preId + "Lp")
 			.setPlaceholder('Получить больше инфы о....')
@@ -323,12 +324,77 @@ msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // пои
 	
 }
 msgProcess.searchByLabel = async (nek, msg, label, transType) => { // Поиск по бортовому номеру
+	if (!label) {
+		let embed = new Discord.EmbedBuilder()
+			.setTitle('А что искать?')
+			.setColor(nek.config.errorcolor)
+			.setDescription("Укажите бортовой номер машины")
+		await msg.reply({ embeds: [embed] }); // запоминаем сообщение
+		return;
+	}
+	if (!transType) {
+		let embed = new Discord.EmbedBuilder()
+			.setTitle('А что искать?')
+			.setColor(nek.config.errorcolor)
+			.setDescription("Укажите тип транспорта")
+		await msg.reply({ embeds: [embed] }); // запоминаем сообщение
+		return;
+	}
+	const transports = await sillyProcess.getTransportFull(nek, transType, msg); 
+	//console.log(transports)
+	const waitmsg = transports.m;
+	let foundTrans = false; // нужная нам машина
+	for await (const trans of transports.t) { // чекаем все машины
+		if (trans.VehicleLabel.toLowerCase() === label) { // если это номер, который был указан пользователем
+			foundTrans = true;
+		}
+	}
+	if (!foundTrans) { // если ничего не нашли
+		let embed = new Discord.EmbedBuilder()
+			.setTitle('no bitches')
+			.setColor(nek.config.errorcolor)
+			.setDescription('Не нашел такого номера');
+		await waitmsg.edit({ embeds: [embed] });
+		return;
+	}
+	// кнопки
+	const preId = msg.author.id + "_0_neworgp_" + transType + "_";
+	const photo = new Discord.ButtonBuilder()
+		.setCustomId(preId + "bp")
+		.setLabel('Фото')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(true);
+	const map = new Discord.ButtonBuilder()
+		.setCustomId(preId + "bm")
+		.setLabel('Местоположение')
+		.setStyle(Discord.ButtonStyle.Secondary)
+		.setDisabled(true);
+	
+	// создаем строки интерактивных элементов
+	const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, map);
+	
+	
+	const selectList = new Discord.StringSelectMenuBuilder()
+		.setCustomId(preId + "lp")
+		.setPlaceholder('Получить больше инфы о...')
+		.setDisabled(false)
+		.addOptions({
+			label: label,
+			value: label
+		});
+	const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
+	
 	let embed = new Discord.EmbedBuilder()
-		.setTitle('Поиск по бортовому номеру')
+		.setTitle('Загрузка')
 		.setColor(nek.config.basecolor)
-		.setDescription('Пока что в разработке')
-	await msg.reply({ embeds: [embed] }); // запоминаем сообщение
-	return;
+		.setDescription('Загрузка');
+	await waitmsg.edit({ embeds: [embed], components: [listRow, buttonsRow] });
+	
+	const fakeinteraction = {
+		message: waitmsg,
+		values: [label]
+	}
+	interactionProcess.pagePhoto(nek, null, fakeinteraction);
 }
 msgProcess.searchRouteName = async (nek, msg, approxName, transType) => { // Поиск маршрута
 	if (!approxName) {
@@ -427,7 +493,8 @@ webProcess.searchRoute = async (name, type, skip = 0) => { // найти мар�
 	  headers: {
 		"content-type": "multipart/form-data; boundary=" + payload.boundary,
 		'Content-Length': payload.body.length
-	  }
+	  },
+	  ca: ca
 	}
 	return new Promise((resolve, reject) => { // ждем пока получим ответ от сайта
 		const req = https.request(options, (res) => { // обращаемся к серваку
@@ -468,7 +535,8 @@ webProcess.getTransport = async (type, bbox) => { // найти транпорт
 	  port: 443,
 	  path: '/api/visary/geometry/vehicle?' + transport + 'bbox=' + bbox,
 	  method: 'GET',
-	  headers: {}
+	  headers: {},
+	  ca: ca
 	}
 	return new Promise((resolve, reject) => { // ждем пока получим ответ от сайта
 		const req = https.request(options, (res) => { // обращаемся к серваку
