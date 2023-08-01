@@ -5,6 +5,8 @@
 	"prefix": "sas!",
 	"info": "New Kitsune (он же NeKit) - крутямбовый бот, который может генерировать мемы, искать транспорт всякий и... вроде всё.",
 	"socfile": "discord",
+	"msgCooldown": 2000,
+	"interactionCooldown": false,
 	
 	"developers": ["391635525603426305"],
 	"thanks": ["505801500077981721", "359730352073474049"]
