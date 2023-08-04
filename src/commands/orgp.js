@@ -2,7 +2,11 @@ const Discord = require("discord.js");
 const request = require("request");
 const https = require("https");
 const numco = require("numco");
-const os = require('os'); // получение данных о системе для генерации useragent
+//const os = require('os'); // получение данных о системе для генерации useragent
+const fs = require("fs");
+
+// == Сертификат безопасности для HTTPS подключения
+const ca = fs.readFileSync('./src/assets/orgp/ca/russian_trusted_root_ca_pem.crt');
 
 const bbox = "754522.5047236,6680543.9238783,5904162.1488232,10277276.671411" // в каком четырёхугольнике искать машины на карте
 
@@ -18,12 +22,12 @@ readableType['bus'] = "Автобус"
 readableType['tram'] = "Трамвай"
 
 // типо браузер
-let useragent = "Mozilla/5.0 (X11; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0" // defualt agent
-if (os.platform().startsWith('win')){
-	useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
-} else if (os.platform().startsWith('linux')) {
-	useragent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/108.0.0.0 Safari/537.36"
-}
+// let useragent = "Mozilla/5.0 (X11; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0" // defualt agent
+// if (os.platform().startsWith('win')){
+	// useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+// } else if (os.platform().startsWith('linux')) {
+	// useragent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chromium/108.0.0.0 Safari/537.36"
+// }
 class Orgp {
 	constructor(nek){
 		this.version = "old";
@@ -121,6 +125,9 @@ class Orgp {
 			  headers: {
 				"authority": "transport.orgp.spb.ru",
 				"scheme": "https"
+			  },
+			  agentOptions: {
+				ca: ca  
 			  }
 			};
 			request.get(options, (err, res, body) => { // обращаемся к серваку
@@ -178,6 +185,9 @@ class Orgp {
 				"cookie": "JSESSIONID=" + cache_cookie, // это кот куки
 				"authority": "transport.orgp.spb.ru",
 				"scheme": "https"
+			  },
+			  agentOptions: {
+				ca: ca  
 			  }
 			};
 			request.get(options, (err, res, body) => { // обращаемся к серваку
@@ -276,6 +286,7 @@ class Orgp {
 				//"cookie": "JSESSIONID=" + sessionid,
 				"content-type": "application/x-www-form-urlencoded; charset=UTF-8"
 			  },
+			  ca: ca
 			}
 			const reqr = https.request(options, (res) => { // обращаемся к серваку
 				//console.log('connected')
