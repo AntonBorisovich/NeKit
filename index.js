@@ -1,4 +1,4 @@
-// New Kitsune (NeKit) bootloader // Anton Borisovich
+// New Kitsune (NeKit) bootstrap // Anton Borisovich
 //  Обновлено: смотрите свойства файла index.js
 
 // Пояснения по комментариям:
@@ -22,7 +22,7 @@ let nek = { // главная переменная всего бота
 	config: {
 		codename: "nekit",
 		fullname: "New Kitsune",
-		version: "1.1.0"
+		version: "1.1.1"
 	}
 }; 
 
@@ -141,7 +141,7 @@ nek.simplelog = async (msg, color, noBrake) => { // просто вывод ст
 }
 
 // === НАЧАЛО РАБОТЫ === //
-nek.log('BOOTLOADER', '"' + nek.config.fullname + '" started! Version: ' + nek.config.version); // информируем, что загрузчик успешно задал основные функции
+nek.log('BOOTSTRAP', '"' + nek.config.fullname + '" started! Version: ' + nek.config.version); // информируем, что загрузчик успешно задал основные функции
 
 nek.launchTime = Date.now(); // запоминаем время запуска
 nek.errorsCount = 0;
@@ -149,7 +149,7 @@ const os = require('os'); // подключение библиотеки пол�
 const fs = require("fs"); // подключение библиотеки файловой системы (fs)
 
 // Загрузка пользовательских настроек (конфига)
-nek.log('BOOTLOADER', 'Reading config...', false, true); // информируем, что начинаем читать конфиг
+nek.log('BOOTSTRAP', 'Reading config...', false, true); // информируем, что начинаем читать конфиг
 try {
 	nek.config = {...nek.config, ...require('./src/config/config.json')}; // читаем файл конфига
 	nek.simplelog('OK!', 'green'); // информируем, что конфиг успешно считаны
@@ -209,7 +209,7 @@ if (!nek.config.name) { // если есть имя
 }
 
 // Загрузка конфиденциальных параметров
-nek.log('BOOTLOADER', 'Reading secrets...', false, true); // информируем, что начинаем читать секреты и токены
+nek.log('BOOTSTRAP', 'Reading secrets...', false, true); // информируем, что начинаем читать секреты и токены
 try {
 	const secrets = require('./src/config/secrets.json'); // читаем файл конфига
 	nek.config["token_" + nek.config.socfile] = secrets["token_" + nek.config.socfile] // пишем токен из секретов в токен
@@ -225,7 +225,7 @@ try {
 
 // Чтение функций
 function loadFunctions() {
-	nek.log('BOOTLOADER', 'Loading functions...', false, true);
+	nek.log('BOOTSTRAP', 'Loading functions...', false, true);
 	nek.functions = new Map(); // создаём мапу функций
 	let funcErrs = []; // создаём массив ошибок
 	const dir = fs.readdirSync('./src/functions/'); // смотрим папку с функциями
@@ -246,7 +246,7 @@ function loadFunctions() {
 }
 // Чтение команд
 function loadCommands() {
-	nek.log('BOOTLOADER', 'Loading commands...', false, true);
+	nek.log('BOOTSTRAP', 'Loading commands...', false, true);
 	nek.commands = new Map(); // создаём мапу команд
 	let commErrs = []; // создаём массив ошибок
 	const dir = fs.readdirSync('./src/commands/'); // смотрим папку с командами
@@ -306,13 +306,13 @@ if (!nekComms[0]) { // если нет ни единой ошибки, то вс
 try {
 	const sock = require("./src/" + nek.config.socfile + '.js'); // читаем файл (socfile - social file)
 	const social = new sock(nek); // прототипим файл ???
-	nek.log('BOOTLOADER', 'Loaded ' + social.name + ' [' + social.version + ']');
+	nek.log('BOOTSTRAP', 'Loaded ' + social.name + ' [' + social.version + ']');
 	if (totalErrors[0]) { // если есть ошибки, то 
 		if (nek.config.noDmErrors) { // если нельзя логировать ошибки
-			nek.log('BOOTLOADER', 'Skipped error report. Shutting down...');
+			nek.log('BOOTSTRAP', 'Skipped error report. Shutting down...');
 			process.exit(1);
 		} else {
-			nek.log('BOOTLOADER', 'Trying to report errors...');
+			nek.log('BOOTSTRAP', 'Trying to report errors...');
 			social.logErrors(nek, totalErrors);
 			return;
 		}

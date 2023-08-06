@@ -105,7 +105,7 @@ class discord {
 
 			const startTime = Date.now(); // запоминаем когда начали работать над командой
 			
-			if (args[args.length-1].toLowerCase() === "--help") { // если последний аргумент - "--help"
+			if (args[args.length-1].toLowerCase() === "--help") { // если последний аргумент - "--help" (а надо ли это? TODO)
 				const helpComm = nek.commands.get("help"); // ищем команду help
 				args = [nek.config.prefix + helpComm.name, comm.name]; // подменяем аргументы
 				comm = helpComm; // подменяем исполняемую команду на help
