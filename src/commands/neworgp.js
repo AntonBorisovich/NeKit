@@ -1,6 +1,6 @@
 // == TODO
 // - Доделать страницу с фото (взять хотя бы плейсхолдер из команды stts)
-// - Сделать более универсальное изменение содержимого отправленных кнопок (это активно используется в интеракциях)
+// - DONE Сделать более универсальное изменение содержимого отправленных кнопок (это активно используется в интеракциях)
 // - Дать пользователю выбор отображать сторонний транспорт или нет (второй список список: только выбранный, на том же маршруте, все <тип транспорта>)
 // - DONE Дать пользователю выбор степени зума (ещё одинм рядом кнопок ниже)
 
@@ -10,21 +10,22 @@ const https = require("https");
 const fs = require("fs");
 const StaticMaps = require('staticmaps');
 
-// == Сертификат безопасности для HTTPS подключения (ебучая россия)
+// == Сертификат безопасности для HTTPS подключения
 const ca = fs.readFileSync('./src/assets/orgp/ca/russian_trusted_root_ca_pem.crt');
 
 // == Переменные
-let requests = new Map(); // карта, где хранятся запросы (типо по ключу (id сообщения) можно получить объект {msg: msg, info: {всякая инфа})
+//let requests = new Map(); // карта, где хранятся запросы (типо по ключу (id сообщения) можно получить объект {msg: msg, info: {всякая инфа})
 
 // == Константы
 // координаты (bbox), в пределах которых нужно искать машины
 const fullbbox = "31.262970,60.444011,28.473816,59.451358"; // https://i.imgur.com/l6al1YY.png
 const partbboxes = [ // https://i.imgur.com/ljnXWyw.png
-"31.262970,60.444011,28.473816,60.077345", // top
-"31.262970,60.077345,28.473816,59.983189", // upcity
-"31.262970,59.983189,28.473816,59.905812", // midcity
-"31.262970,59.905812,28.473816,59.830670", // downcity
-"31.262970,59.830670,28.473816,59.451358"] // bottom
+	"31.262970,60.444011,28.473816,60.077345", // top
+	"31.262970,60.077345,28.473816,59.983189", // upcity
+	"31.262970,59.983189,28.473816,59.905812", // midcity
+	"31.262970,59.905812,28.473816,59.830670", // downcity
+	"31.262970,59.830670,28.473816,59.451358"  // bottom
+] 
 
 const readableType = { // форматирование в читабельный вид типов транспорта
 	'trolley': 'троллейбус',
@@ -199,67 +200,80 @@ argsProcess.cli = async (args) => { // обработка текстовых а�
 
 // == Обработка текстовых команд
 let msgProcess = {};
-msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // поиск по номеру маршрута
-	if (!routeName) {
+msgProcess.searchByRouteOrLabel = async (nek, msg, number, transType, searchType) => { // поиск по номеру маршрута
+	if (!number) {
 		let embed = new Discord.EmbedBuilder()
-			.setTitle('А что искать?')
-			.setColor(nek.config.errorcolor)
-			.setDescription("Укажите номер маршрута")
+			.setTitle("Не указан маршрут")
+			.setColor(nek.config.errorcolor);
 		await msg.reply({ embeds: [embed] }); // запоминаем сообщение
 		return;
 	}
 	if (!transType) {
 		let embed = new Discord.EmbedBuilder()
-			.setTitle('А что искать?')
-			.setColor(nek.config.errorcolor)
-			.setDescription("Укажите тип транспорта")
+			.setTitle("Не указан тип транспорта")
+			.setColor(nek.config.errorcolor);
 		await msg.reply({ embeds: [embed] }); // запоминаем сообщение
 		return;
 	}
-	const transports = await sillyProcess.getTransportFull(nek, transType, msg); 
-	let footer = "";
-	const waitmsg = transports.m;
-	let routeTransports = []; // транспорты на нужном нам маршруте
+	const transports = await sillyProcess.getTransportFull(nek, transType, msg);
+	const waitmsg = transports.message;
 	let labels = [];
 	let publicOut = []; // бортовые номера
-	for await (const trans of transports.t) { // чекаем все маршруты
-		if (trans.RouteShortName.toLowerCase() === routeName) { // если это маршрут, который был указан пользователем
-			routeTransports.push(trans); // записать полный объект транспорта
-			labels.push(trans.VehicleLabel); // записать чисто номера маршрутов (надо для создания customId кнопки)
-			publicOut.push(dirToBlock[trans.RouteDirection] + " №" + trans.VehicleLabel + "\n"); // записать видимые для пользователя данные
+	if (searchType === "route") {
+		for await (const trans of transports.transports) { // чекаем все маршруты
+			if (trans.RouteShortName.toLowerCase() === number) { // если это маршрут, который был указан пользователем
+				labels.push(trans.VehicleLabel); // записать чисто номера маршрутов (надо для создания customId кнопки)
+				publicOut.push("№" + trans.VehicleLabel + "\n"); // записать видимые для пользователя данные
+			}
+		}
+	} else if (searchType === "label") {
+		for await (const trans of transports.transports) { // чекаем все маршруты
+			if (trans.VehicleLabel === number) { // если это маршрут, который был указан пользователем
+				labels.push(trans.VehicleLabel); // записать чисто бортовые номера (надо для создания customId кнопки)
+				publicOut.push("№" + trans.VehicleLabel + " / маршрут " + trans.RouteShortName + "\n"); // записать видимые для пользователя данные
+			}
 		}
 	}
 	
-	labels.sort(); // сортируем
+	// сортируем
+	labels.sort();
+	publicOut.sort();
 	
-	publicOut.sort(); // сортируем
-	publicOut = publicOut.join(''); // преобразуем отсортированный массив в строку
-	if (!routeTransports[0]) { // если ничего не нашли
+	if (!labels[0]) { // если ничего не нашли
 		let embed = new Discord.EmbedBuilder()
-			.setTitle('no bitches')
-			.setColor(nek.config.errorcolor)
-			.setDescription('Не нашел ничего');
+			.setTitle("Ничего не найдено")
+			.setColor(nek.config.errorcolor);
 		await waitmsg.edit({ embeds: [embed] });
 		return;
 	}
 	
-	// эмбед
-	let embed = new Discord.EmbedBuilder()
-		.setTitle('Маршрут ' + routeTransports[0].RouteShortName)
-		.setColor(nek.config.basecolor)
-		.setDescription("Найдено " + routeTransports.length + " (" + readableType[transType] + "):\n" + publicOut + "\n" +
-		"🟦 - туда / 🟧 - обратно\n" +
-		"[:map: Карта маршрута](https://transport.orgp.spb.ru/routes/" + routeTransports[0].RouteId + ")");
-	if (transports.l[0]) {
-		footer += "Был достигнут лимит сайта (" + transports.l.join(', ') + "). В списке присутствует не весь транспорт.\n\n"
+	if (labels.length === 1) { // если найден всего один транспорт, то сразу рисуем карту
+		let embed = new Discord.EmbedBuilder()
+			.setTitle("№" + labels[0] + " - Местоположение")
+			.setColor(nek.config.basecolor)
+			.setDescription("Найдена только одна машина. Загрузка карты...");
+		await waitmsg.edit({ embeds: [embed] });
+		showMap(nek, {
+			zoom: 15,
+			label: labels[0],
+			authorId: msg.author.id,
+			transportType: transType,
+			message: waitmsg
+		});
+		return;
 	}
+
+	let embed = new Discord.EmbedBuilder()
+		.setColor(nek.config.basecolor)
+		.setDescription("Найдено " + labels.length + " (" + readableType[transType] + "):\n" + publicOut.join(""));
+		
 	const preId = msg.author.id + "_0_neworgp_" + transType + "_";
 	
-	// списки
+	// список
 	let selectList;
-	if (labels.length <= 25) {
+	if (labels.length <= 25) { // если мы проходим в ограничения дискорда
 		selectList = new Discord.StringSelectMenuBuilder()
-			.setCustomId(preId + "lp")
+			.setCustomId(preId + "map_15")
 			.setPlaceholder('Получить больше инфы о...')
 			.setDisabled(false);
 		await labels.forEach((label) => {
@@ -270,83 +284,47 @@ msgProcess.searchByRoute = async (nek, msg, routeName, transType) => { // пои
 		});
 	} else {
 		selectList = new Discord.StringSelectMenuBuilder()
-			.setCustomId(preId + "lp")
+			.setCustomId(preId + "map_15")
 			.setPlaceholder('Получить больше инфы о...')
-			.setDisabled(true);
-		selectList.addOptions({
-			label: ' ',
-			value: ' '
-		});
-		footer += "Слишком много транспорта, мы не можем засунуть их в список. Используйте " + nek.config.prefix + "neworgp номер <тип> <борт. номер>\n\n"
+			.setDisabled(true)
+			.addOptions({
+				label: "1234",
+				value: "1234"
+			});
 	}
-	
-	
-	
-	if (footer) {
-		embed.setFooter({text: footer});
-	}
-	// кнопки
-	const photo = new Discord.ButtonBuilder()
-		.setCustomId(preId + "bp")
-		.setLabel('Фото')
-		.setStyle(Discord.ButtonStyle.Secondary)
-		.setDisabled(true);
-	const map = new Discord.ButtonBuilder()
-		.setCustomId(preId + "bm")
-		.setLabel('Местоположение')
-		.setStyle(Discord.ButtonStyle.Secondary)
-		.setDisabled(true);
-	
-	// создаем строки интерактивных элементов
 	const listRow = new Discord.ActionRowBuilder().addComponents(selectList);
-	const buttonsRow = new Discord.ActionRowBuilder().addComponents(photo, map);
+	await waitmsg.edit({ embeds: [embed], components: [listRow] });
+	return;
 	
-	await waitmsg.edit({ embeds: [embed], components: [listRow, buttonsRow] });
-	return;
-}
-msgProcess.searchByLabel = async (nek, msg, label, transType) => { // Поиск по бортовому номеру
-	let embed = new Discord.EmbedBuilder()
-		.setTitle('Поиск по бортовому номеру')
-		.setColor(nek.config.basecolor)
-		.setDescription('Пока что в разработке')
-	await msg.reply({ embeds: [embed] }); // запоминаем сообщение
-	return;
 }
 msgProcess.searchRouteName = async (nek, msg, approxName, transType) => { // Поиск маршрута
 	if (!approxName) {
 		let embed = new Discord.EmbedBuilder()
-			.setTitle('Маршрут не найден')
-			.setColor(nek.config.errorcolor)
-			.setDescription('Укажите хотя бы номер маршрута')
+			.setTitle('Укажите маршрут')
+			.setColor(nek.config.errorcolor);
 		await msg.reply({ embeds: [embed] }); // запоминаем сообщение
 		return;
 	}
 	const loadingString = sillyProcess.getLoadingString();
-	let embed1 = new Discord.EmbedBuilder()
-		.setTitle('Веду поиск...')
+	let embed = new Discord.EmbedBuilder()
+		.setTitle('Поиск маршрута')
 		.setColor(nek.config.basecolor)
-		.setDescription(loadingString)
-	const waitmsg = await msg.reply({ embeds: [embed1] }); // запоминаем сообщение
+		.setDescription(loadingString);
+	const waitmsg = await msg.reply({ embeds: [embed] }); // запоминаем сообщение
 	
 	let searchResults = await webProcess.searchRoute(approxName, transType, 0);
 	if (!searchResults || !searchResults[0]) {
 		let embed = new Discord.EmbedBuilder()
-			.setTitle('Маршрут не найден')
-			.setColor(nek.config.errorcolor)
-			.setDescription('Не найдено ни одного маршрута с похожим номером')
+			.setTitle("Ничего не найдено")
+			.setColor(nek.config.errorcolor);
 		await waitmsg.edit({ embeds: [embed] }); // запоминаем сообщение
 		return;
 	}
 	
 	let totalFound = searchResults.length;
 	if (searchResults.length === 20) {
-		let embed1 = new Discord.EmbedBuilder()
-			.setTitle('Веду поиск...')
-			.setColor(nek.config.basecolor)
-			.setDescription(loadingString + " `Ещё немного...`")
-		await waitmsg.edit({ embeds: [embed1] }); // запоминаем сообщение
-		const anotherSearchResults = await webProcess.searchRoute(approxName, transType, 20) // пропускаем первые 20 маршрутов, т.к. мы их нашли выше, и ищем ещё
-		searchResults = [...searchResults, ...anotherSearchResults]
+		const anotherSearchResults = await webProcess.searchRoute(approxName, transType, 20); // пропускаем первые 20 маршрутов, т.к. мы их нашли выше, и ищем ещё
+		searchResults = [...searchResults, ...anotherSearchResults];
 		if (searchResults.length === 40) {
 			totalFound = "40 или более";
 		} else {
@@ -363,7 +341,7 @@ msgProcess.searchRouteName = async (nek, msg, approxName, transType) => { // П�
 	} else {
 		transType = readableType[transType];
 	}
-	let embed = new Discord.EmbedBuilder()
+	embed = new Discord.EmbedBuilder()
 		.setTitle('Поиск маршрута')
 		.setColor(nek.config.basecolor)
 		.setDescription("По запросу `" + approxName + "` среди типа `" + transType + "` было найдено `" + totalFound + "` маршрутов:\n" + routesList +
@@ -447,12 +425,12 @@ webProcess.getTransport = async (type, bbox) => { // найти транпорт
 		transport = 'transport=' + type + '&';
 	}
 	const options = { // параметры обращения к серваку
-	  hostname: 'nts-admin.orgp.spb.ru',
-	  port: 443,
-	  path: '/api/visary/geometry/vehicle?' + transport + 'bbox=' + bbox,
-	  method: 'GET',
-	  headers: {},
-	  ca: ca
+		hostname: 'nts-admin.orgp.spb.ru',
+		port: 443,
+		path: '/api/visary/geometry/vehicle?' + transport + 'bbox=' + bbox,
+		method: 'GET',
+		headers: {},
+		ca: ca
 	}
 	return new Promise((resolve, reject) => { // ждем пока получим ответ от сайта
 		const req = https.request(options, (res) => { // обращаемся к серваку
@@ -481,78 +459,39 @@ webProcess.getTransport = async (type, bbox) => { // найти транпорт
 	})
 }
 
-// == Обработка интерактивных элементов (кнопок и списков)
-let interactionProcess = {};
-interactionProcess.pageMap = async (nek, client, interaction) => {
-	let customId = interaction.customId.split("_");
+showMap = async (nek, parameters) => {
+	const preId = parameters.authorId + "_0_neworgp_" + parameters.transportType + "_MAP_"
 	
-	let label;
-	if (interaction.values) { // если есть values (т.е. был выбран транспорт из списка)
-		label = interaction.values[0]; // берем бортовой номер из values
-	} else { // иначе
-		label = interaction.message.embeds[0].data.title // достаём заголовок embed-а
-		label = label.substring(1,label.indexOf(" ")) // обрезаем его до бортового номера
-	}
-	
-	let zoom = Number(customId[5]);
-	//console.log(zoom)
-	if (!zoom) {
-		zoom = 15;
-	}
-	let customIdWithCustomZoom = customId; // создаем customId, где можно спокойно менять зум
-	customIdWithCustomZoom[5] = (zoom - 1);
+	const update = new Discord.ButtonBuilder()
+		.setCustomId(preId + parameters.zoom)
+		.setLabel('Обновить')
+		.setStyle(Discord.ButtonStyle.Success)
+		.setDisabled(false);
 	const zoomOut = new Discord.ButtonBuilder()
-		.setCustomId(customIdWithCustomZoom.join('_'))
+		.setCustomId(preId + (parameters.zoom - 1))
 		.setLabel('🔎 -')
 		.setStyle(Discord.ButtonStyle.Secondary)
 		.setDisabled(false);
 	const zoomCurrent = new Discord.ButtonBuilder()
 		.setCustomId('currentZoom')
-		.setLabel('🔎 ' + zoom)
+		.setLabel('🔎 ' + parameters.zoom)
 		.setStyle(Discord.ButtonStyle.Secondary)
 		.setDisabled(true);
-	customIdWithCustomZoom[5] = (zoom + 1);
 	const zoomIn = new Discord.ButtonBuilder()
-		.setCustomId(customIdWithCustomZoom.join('_'))
+		.setCustomId(preId + (parameters.zoom + 1))
 		.setLabel('🔎 +')
 		.setStyle(Discord.ButtonStyle.Secondary)
 		.setDisabled(false);
-	let zoomRow = new Discord.ActionRowBuilder().addComponents(zoomOut, zoomCurrent, zoomIn);
+	let buttonsRow = new Discord.ActionRowBuilder().addComponents(update, zoomOut, zoomCurrent, zoomIn);
+	let components;
+	if (parameters.list) {
+		components = [parameters.list, buttonsRow];
+	} else {
+		components = [buttonsRow];
+	}
 	
-	let buttonsRow = interaction.message.components[1]
-	let listRow = interaction.message.components[0];
-	// выключаем все кнопки пока карта ещё не отправлена
-	listRow.components[0].data.disabled = true; // выключаем список
-	buttonsRow.components[0].data.disabled = true; // выключаем кнопку map
-	buttonsRow.components[1].data.disabled = true; // выключаем кнопку
+	const transports = await sillyProcess.getTransportFull(nek, parameters.type, false); // ищем по всему питеру
 	
-	customIdWithCustomZoom[5] = zoom; // меняем зум
-	buttonsRow.components[1].data.custom_id = customIdWithCustomZoom.join('_'); // меняем customId с новым значением зума
-	
-	buttonsRow.components[1].data.label = "Загрузка..."; // меняем имя кноки "Местоположение" во время загрузки
-	zoomRow.components[0].data.disabled = true;
-	zoomRow.components[2].data.disabled = true;
-	
-	await interaction.message.edit({components: [listRow, buttonsRow, zoomRow]}); // отправляем выключенные кнопки
-	
-	let listId = listRow.components[0].data.custom_id;
-	listId = listId.substring(0, listId.length-1) + "m";
-	listRow.components[0].data.custom_id = listId;
-	listRow.components[0].data.disabled = false; // включаем список
-	buttonsRow.components[0].data.disabled = false; // включаем кнопку "Фото"
-	buttonsRow.components[0].data.style = 1; // делаем кнопку "Фото" синей
-	
-	buttonsRow.components[1].data.disabled = false; // включаем кнопку "Местоположение"
-	buttonsRow.components[1].data.label = "Обновить"; // меняем имя кноки "Местоположение"
-	
-	buttonsRow.components[1].data.style = 3; // делаем кнопку "Местоположение" зелёной
-	
-	zoomRow.components[0].data.disabled = false;
-	zoomRow.components[2].data.disabled = false;
-	
-	const type = customId[3];
-	const transports = await sillyProcess.getTransportFull(nek, type, false); // ищем по всему питеру
-	let car = false;
 	const map = new StaticMaps({
 		width: 512,
 		height: 512,
@@ -607,66 +546,33 @@ interactionProcess.pageMap = async (nek, client, interaction) => {
 		});
 		
 	}
-	for await (const trans of transports.t) { // чекаем все маршруты
-		if (trans.VehicleLabel === label) { // если это маршрут, который был указан пользователем
+	let car = false;
+	for await (const trans of transports.transports) { // чекаем все маршруты
+		if (trans.VehicleLabel === parameters.label) {
 			car = trans;
-		} //else {
-			//drawCar(map, trans);
-		//}
+		}
 	}
 	if (!car) {
-		embed = new Discord.EmbedBuilder()
-			.setTitle("№" + label + " - Местоположение")
-			.setColor(nek.config.basecolor)
-			.setDescription("Не удалось найти машину. Возможно она уже не на маршруте)");
-		await interaction.message.edit({files: [], embeds: [embed], components: [listRow, buttonsRow, zoomRow]}); // отправляем
+		let embed = new Discord.EmbedBuilder()
+			.setTitle("№" + parameters.label + " - Местоположение")
+			.setColor(nek.config.errorcolor)
+			.setDescription("Не удалось найти машину. Возможно она уже не на маршруте");
+		await parameters.message.edit({files: [], embeds: [embed], components: components});
 		return;
 	}
 	drawCar(map, car); // рисуем искомую машину в последнюю очередь, что бы она была выше всех
-	//const startTime2 = Date.now();
-	await map.render([car.Location.Longitude, car.Location.Latitude], zoom); // рендерим карту
-	//console.log('rendered in ' + (Date.now() - startTime2) / 1000);
-	const mappic = await map.image.buffer('image/png'); // сохраняем в буфер
+	await map.render([car.Location.Longitude, car.Location.Latitude], parameters.zoom); // рендерим карту
+	const mapBuffer = await map.image.buffer('image/png'); // сохраняем в буфер
 	const updateTime = new Date(car.DateTime.replace(/Z/g, '+03:00'));
 	
-	embed = new Discord.EmbedBuilder()
-		.setTitle("№" + label + " - Местоположение")
+	let embed = new Discord.EmbedBuilder()
+		.setTitle("№" + parameters.label + " - Местоположение")
 		.setColor(nek.config.basecolor)
-		.setDescription("Последние обновление положения: <t:" + (updateTime.getTime() / 1000) + ":R>")
+		.setDescription("Последний раз видели <t:" + (updateTime.getTime() / 1000) + ":R>")
 		.setImage('attachment://' + car.VehicleLabel + '.png');
-	const fileWithName = new Discord.AttachmentBuilder(mappic, { name: car.VehicleLabel + '.png' });
-	await interaction.message.edit({files: [fileWithName], embeds: [embed], components: [listRow, buttonsRow, zoomRow]}); // отправляем
+	const mapAttachment = new Discord.AttachmentBuilder(mapBuffer, { name: car.VehicleLabel + '.png' });
+	await parameters.message.edit({files: [mapAttachment], embeds: [embed], components: components});
 	return;		
-}
-interactionProcess.pagePhoto = async (nek, client, interaction) => {
-	//const customId = interaction.customId.split("_"); // разделяем value по подстрочникам
-	//const valueArgs = interaction.values[0].split("_"); // разделяем value по подстрочникам
-	let label = false;
-	if (interaction.values) {
-		label = interaction.values[0];
-	} else {
-		label = interaction.message.embeds[0].data.title;
-		label = label.substring(1,label.indexOf(" "));
-	}
-	const embed = new Discord.EmbedBuilder()
-		.setTitle("№" + label + " - Фото")
-		.setColor(nek.config.basecolor)
-		.setDescription("Скоро тут будет страница с фоткой")
-		
-	let listRow = interaction.message.components[0];
-	let listId = listRow.components[0].data.custom_id;
-	listId = listId.substring(0, listId.length-1) + "p";
-	listRow.components[0].data.custom_id = listId;
-	
-	let buttonsRow = interaction.message.components[1]
-	buttonsRow.components[0].data.disabled = true; // выключаем кнопку "Фото"
-	buttonsRow.components[0].data.style = 3; // делаем кнопку "Фото" зелёной
-	buttonsRow.components[1].data.disabled = false; // включаем кнопку "Местоположение"
-	buttonsRow.components[1].data.label = "Местоположение"; // Меняем имя кнопки "Обновить"
-	buttonsRow.components[1].data.style = 1; // Меняем цвет кнопки "Местоположение" на синий
-	
-	await interaction.message.edit({content: ' ', files: [], embeds: [embed], components: [listRow, buttonsRow] });
-	return;
 }
 
 // == Другие функции
@@ -739,9 +645,9 @@ sillyProcess.getTransportFull = async (nek, transType, msg) => {
 		let counter = 0;
 		if (msg) {
 			embed = new Discord.EmbedBuilder()
-			.setTitle('Веду поиск...')
-			.setColor(nek.config.basecolor)
-			.setDescription(loadingString + ' `' + counter + '/' + partbboxes.length + "`");
+				.setTitle('Веду поиск...')
+				.setColor(nek.config.basecolor)
+				.setDescription(loadingString + ' `' + counter + '/' + partbboxes.length + "`");
 			await waitmsg.edit({ embeds: [embed] });
 		}
 		
@@ -763,7 +669,7 @@ sillyProcess.getTransportFull = async (nek, transType, msg) => {
 			}
 		}
 	}
-	return {t: transports, l: limitReached, m: waitmsg};
+	return {transports: transports, limit: limitReached, message: waitmsg};
 }
 
 // == Основной код. Обработка запроса пользователя и установка информации о команде
@@ -771,6 +677,7 @@ class NewOrgp {
 	constructor(nek){
 		this.category = "transport";
 		
+		this.ignoreModal = true;
 		this.perms = ["EMBED_LINKS", "ATTACH_FILES"];
         this.name = "neworgp"; // имя команды
 		this.desc = "питерский наземный транспорт"; // описание команды в общем списке команд
@@ -794,16 +701,16 @@ class NewOrgp {
 		}
 		orgpArgs = await argsProcess.cli(args); // ждем готовых аргументов (через текстовые аргументы)
 		if (orgpArgs.workMode === "byRoute") {
-			await msgProcess.searchByRoute(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
+			await msgProcess.searchByRouteOrLabel(nek, msg, orgpArgs.arbArg, orgpArgs.transType, "route");
 		} else if (orgpArgs.workMode === "byLabel") {
-			await msgProcess.searchByLabel(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
+			await msgProcess.searchByRouteOrLabel(nek, msg, orgpArgs.arbArg, orgpArgs.transType, "label");
 		} else if (orgpArgs.workMode === "searchRoute") {
 			await msgProcess.searchRouteName(nek, msg, orgpArgs.arbArg, orgpArgs.transType);
 		} else {
 			let embed = new Discord.EmbedBuilder()
-			.setTitle('Неизвестная операция')
-			.setColor(nek.config.errorcolor)
-			.setDescription('Неизвестная операция. Прочитайте аргументы в `' + nek.config.prefix + this.name + ' --help`')
+				.setTitle('Неизвестная операция')
+				.setColor(nek.config.errorcolor)
+				.setDescription('Неизвестная операция. Прочитайте аргументы в `' + nek.config.prefix + this.name + ' --help`')
 			await msg.reply({ embeds: [embed] });
 		}
 		return;
@@ -811,17 +718,31 @@ class NewOrgp {
 	
 	async interaction(nek, client, interaction){
 		const customId = interaction.customId.split("_");
-		if (customId[4].substring(1) === "m"){ // map (кнопки "Местоположение" и "Обновить")
+		if (customId[4] === "map" || customId[4] === "MAP"){ // map (кнопки "Местоположение" и "Обновить")
+			let parameters = {
+				zoom: Number(customId[5]),
+				transportType: customId[3],
+				authorId: interaction.user.id,
+				message: interaction.message
+			}
+			if (!interaction.values) { // если была нажата кнопка
+				parameters.label = interaction.message.embeds[0].data.title; // берём борт. номер из заголовка
+				parameters.label = parameters.label.substring(1,parameters.label.indexOf(" "));
+			} else { // если был выбран пункт из списка
+				parameters.label = interaction.values[0]; // берём борт. номер из списка
+			}
+			
+			for await (let component of interaction.message.components) { // смотрим все компоненты сообщения
+				if (component.components[0].data?.type === 3) { // ищем список
+					parameters.list = component; // запоминаем список
+				}
+			}
+			
 			await interaction.deferUpdate();
-			await interactionProcess.pageMap(nek, client, interaction);
+			await showMap(nek, parameters);
 			return;
 		}
-		if (customId[4].substring(1) === "p"){ // photo (кнопка "Фото")
-			await interaction.deferUpdate();
-			await interactionProcess.pagePhoto(nek, client, interaction);
-			return;
-		}
-		await interaction.reply({content: 'чето не то'});
+		await interaction.reply({content: 'Произошла ошибка. Возможно вы пытаетесь использовать слишком старое сообщение.'});
 		return;
 	}
 };
